@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EL Clasico Football Arena — Noakhali</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--g:#00c853;--g2:#00e676;--gold:#ffd600;
+--dk:#07090a;--card:#111820;--bdr:rgba(0,200,83,0.15);
+--txt:#e8f5e9;--muted:#78909c;
+--tr:0.3s ease;
+--font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif
+}
+[data-theme="light"]{
+--dk:#f5f7f5;--card:#ffffff;--bdr:rgba(0,150,60,0.15);
+--txt:#1a2e1a;--muted:#4a6a4a
+}
+html,body{background:var(--dk);color:var(--txt);font-family:var(--font-sans);transition:background var(--tr),color var(--tr)}
+.page{display:none;min-height:520px;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
+.page.show{display:block;opacity:1;transform:translateY(0)}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--dk);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:200;flex-wrap:wrap;gap:8px;transition:background var(--tr)}
+.logo{font-size:15px;font-weight:500;color:var(--txt);cursor:pointer}.logo b{color:var(--gold)}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}
+.nl{padding:6px 11px;border-radius:20px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.nl:hover{color:var(--txt)}
+.nl.active{color:var(--g2);border-color:rgba(0,230,118,0.25);background:rgba(0,230,118,0.07)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.theme-btn{background:transparent;border:1px solid var(--bdr);color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.theme-btn:hover{border-color:var(--g);color:var(--g2)}
+.nb{background:var(--g);color:#000;padding:7px 15px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;border:none}
+
+/* FLOATING WA */
+.wa-float{position:fixed;bottom:20px;right:20px;z-index:999;width:52px;height:52px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(37,211,102,0.4);transition:transform .2s}
+.wa-float:hover{transform:scale(1.1)}
+.wa-float svg{width:26px;height:26px}
+.wa-tooltip{position:absolute;right:60px;top:50%;transform:translateY(-50%);background:var(--card);border:1px solid var(--bdr);color:var(--txt);padding:6px 12px;border-radius:20px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s}
+.wa-float:hover .wa-tooltip{opacity:1}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#050d05 0%,#0a1f0a 40%,#060d18 100%);padding:2.5rem 2rem 2rem;text-align:center;border-bottom:1px solid var(--bdr)}
+[data-theme="light"] .hero{background:linear-gradient(135deg,#e8f5e9,#f1f8e9,#e3f2fd)}
+.hero-badge{display:inline-block;background:rgba(0,200,83,0.12);border:1px solid rgba(0,200,83,0.3);color:var(--g2);font-size:10px;padding:4px 14px;border-radius:20px;margin-bottom:.8rem;letter-spacing:2px;text-transform:uppercase}
+.hero h1{font-size:2.4rem;font-weight:500;color:#fff;line-height:1.15;margin-bottom:.5rem}
+[data-theme="light"] .hero h1{color:#1a2e1a}
+.hero h1 b{color:var(--g2)}
+.hero p{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:1.5rem}
+[data-theme="light"] .hero p{color:var(--muted)}
+.hbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:1.8rem}
+.btn-g{background:var(--g);color:#000;padding:11px 24px;border-radius:22px;font-size:14px;font-weight:500;border:none;cursor:pointer;transition:all .15s}
+.btn-g:hover{background:var(--g2)}
+.btn-o{background:transparent;color:var(--g2);border:1.5px solid rgba(0,200,83,0.4);padding:11px 20px;border-radius:22px;font-size:14px;cursor:pointer}
+.hstats{display:flex;gap:0;justify-content:center;border:1px solid var(--bdr);border-radius:12px;overflow:hidden;max-width:460px;margin:0 auto}
+.hs{flex:1;padding:.85rem;text-align:center;border-right:1px solid var(--bdr);background:rgba(0,0,0,0.2)}
+[data-theme="light"] .hs{background:rgba(255,255,255,0.6)}
+.hs:last-child{border:none}
+.hs-n{font-size:1.2rem;font-weight:500;color:var(--g2)}.hs-l{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* SOCIAL */
+.social-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:.9rem;border-bottom:1px solid var(--bdr);background:rgba(0,0,0,0.2);flex-wrap:wrap}
+[data-theme="light"] .social-bar{background:rgba(0,0,0,0.03)}
+.soc-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:18px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;transition:all .15s;border:1px solid transparent}
+.soc-fb{background:rgba(24,119,242,0.12);border-color:rgba(24,119,242,0.25);color:#90b8f8}
+.soc-ig{background:rgba(225,48,108,0.1);border-color:rgba(225,48,108,0.25);color:#f48fb1}
+.soc-wa{background:rgba(37,211,102,0.1);border-color:rgba(37,211,102,0.25);color:#69f0ae}
+
+/* PRICE BANNER */
+.price-banner{background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin:1.2rem;overflow:hidden;transition:background var(--tr)}
+.pb-title{padding:.65rem 1rem;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr)}
+.pb-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.pb-item{padding:.8rem .5rem;text-align:center;border-right:1px solid var(--bdr)}
+.pb-item:last-child{border:none}
+.pb-time{font-size:10px;color:var(--muted);margin-bottom:3px}
+.pb-price{font-size:1rem;font-weight:500;color:var(--g2)}
+.pb-tag{font-size:9px;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block}
+.tag-night{background:rgba(83,66,177,0.2);color:#b39ddb}
+.tag-early{background:rgba(21,101,192,0.18);color:#90caf9}
+.tag-day{background:rgba(46,125,50,0.15);color:#a5d6a7}
+.tag-eve{background:rgba(230,81,0,0.15);color:#ffcc80}
+
+/* GALLERY */
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:1.2rem;padding-top:0}
+.gal-item{border-radius:10px;overflow:hidden;aspect-ratio:4/3;cursor:pointer;position:relative;transition:transform .2s}
+.gal-item:hover{transform:scale(1.02)}
+.gal-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;border:1px solid var(--bdr)}
+.g1{background:linear-gradient(135deg,#0a2a0a,#1a4a1a)}
+.g2{background:linear-gradient(135deg,#0a1a2a,#1a3a4a)}
+.g3{background:linear-gradient(135deg,#1a1a0a,#3a3a1a)}
+.g4{background:linear-gradient(135deg,#2a0a0a,#4a1a1a)}
+.g5{background:linear-gradient(135deg,#0a2a2a,#1a4a4a)}
+.g6{background:linear-gradient(135deg,#1a0a2a,#3a1a4a)}
+.gal-label{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:.5rem;font-size:11px;color:#fff}
+
+/* LIGHTBOX */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.lightbox.open{display:flex}
+.lb-img{width:320px;height:240px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:4rem}
+.lb-close{color:#fff;font-size:24px;cursor:pointer;position:absolute;top:16px;right:20px;background:rgba(255,255,255,0.1);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* FEATURES */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:1.2rem}
+.feat{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1rem;transition:background var(--tr)}
+.feat-icon{font-size:1.2rem;margin-bottom:.4rem}
+.feat h3{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:.25rem}
+.feat p{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* REVIEWS */
+.reviews-section{padding:1.2rem;padding-top:0}
+.reviews-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem}
+.reviews-header h3{font-size:14px;font-weight:500;color:var(--txt)}
+.overall-rating{display:flex;align-items:center;gap:8px}
+.big-star{font-size:1.6rem;font-weight:500;color:var(--gold)}
+.stars{color:var(--gold);font-size:14px}
+.review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:.8rem}
+.review-card{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:.9rem;transition:background var(--tr)}
+.rev-top{display:flex;align-items:center;gap:8px;margin-bottom:.5rem}
+.rev-av{width:30px;height:30px;border-radius:50%;background:rgba(0,200,83,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--g2);flex-shrink:0}
+.rev-name{font-size:13px;font-weight:500;color:var(--txt)}
+.rev-time{font-size:10px;color:var(--muted)}
+.rev-text{font-size:12px;color:var(--muted);line-height:1.5}
+.add-review-btn{width:100%;padding:10px;border:1.5px dashed var(--bdr);border-radius:10px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;transition:all .15s}
+.add-review-btn:hover{border-color:var(--g);color:var(--g2)}
+.review-form{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:1rem;margin-top:.8rem;display:none;transition:background var(--tr)}
+.star-picker{display:flex;gap:4px;margin-bottom:.6rem}
+.sp{font-size:22px;cursor:pointer;opacity:.4;transition:opacity .15s}.sp.on{opacity:1}
+
+/* FOOTER */
+.footer{background:rgba(0,0,0,0.3);border-top:1px solid var(--bdr);padding:1.2rem;text-align:center}
+[data-theme="light"] .footer{background:rgba(0,0,0,0.04)}
+.footer-links{display:flex;justify-content:center;gap:16px;margin-bottom:.6rem;flex-wrap:wrap}
+.footer-links a{font-size:12px;color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--g2)}
+.footer p{font-size:11px;color:var(--muted)}
+
+/* SHARED */
+.pi{padding:1.5rem}
+.sec-h{font-size:1.1rem;font-weight:500;color:var(--txt);margin-bottom:1.1rem}
+.bwrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.3rem;margin-bottom:1.1rem;transition:background var(--tr)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;color:var(--muted)}
+.fg input,.fg select,.fg textarea{background:var(--dk);border:1px solid var(--bdr);color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px;transition:all .15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--g)}
+.wa-badge{background:rgba(37,211,102,0.12);color:#69f0ae;font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid rgba(37,211,102,0.25);margin-left:4px}
+.wa-hint{font-size:10px;color:#69f0ae;margin-top:3px}
+.dur-row{display:flex;align-items:center;gap:9px;margin-bottom:.9rem;flex-wrap:wrap}
+.dur-row span{font-size:12px;color:var(--muted)}
+.dbtns{display:flex;gap:6px;flex-wrap:wrap}
+.db{padding:5px 12px;border-radius:15px;border:1.5px solid var(--bdr);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s}
+.db.on{border-color:var(--g);color:var(--g2);background:rgba(0,200,83,0.08)}
+.stitle{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-bottom:.5rem;text-transform:uppercase}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-bottom:.9rem}
+.sl{padding:7px 3px;text-align:center;border-radius:8px;font-size:11px;cursor:pointer;border:1.5px solid var(--bdr);color:var(--muted);transition:all .15s;line-height:1.4}
+.sl .slp{font-size:9px;display:block;margin-top:1px}
+.sl.ok:hover{border-color:var(--g);color:var(--g2)}
+.sl.ok.sel{background:var(--g);color:#000;border-color:var(--g);font-weight:500}
+.sl.ok.sel .slp{color:#000}
+.sl.no{background:rgba(229,57,53,0.06);border-color:rgba(229,57,53,0.15);color:rgba(229,57,53,0.4);cursor:not-allowed}
+.sl.blk{background:rgba(100,100,100,0.08);border-color:rgba(100,100,100,0.15);color:rgba(150,150,150,0.3);cursor:not-allowed}
+.total-b{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;background:rgba(0,200,83,0.06);border:1px solid rgba(0,200,83,0.18);border-radius:10px;margin-bottom:.9rem}
+.total-b span{font-size:12px;color:var(--muted)}.total-b strong{font-size:1.2rem;color:var(--g2)}
+.cbtn{width:100%;padding:12px;background:var(--g);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.cbtn:hover{background:var(--g2)}
+.cbtn:disabled{opacity:.5;cursor:not-allowed}
+.sbox{background:rgba(0,200,83,0.06);border:1px solid var(--g);border-radius:10px;padding:1.1rem;text-align:center;display:none;margin-top:.9rem}
+.sbox h3{color:var(--g2);font-size:14px;font-weight:500}.sbox p{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.5}
+.wa-confirm a{display:inline-flex;align-items:center;gap:6px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.25);color:#69f0ae;padding:7px 14px;border-radius:18px;font-size:12px;text-decoration:none;margin-top:.7rem}
+
+/* AUTH MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:1.8rem;width:100%;max-width:360px}
+.modal-box h3{font-size:16px;font-weight:500;color:var(--txt);margin-bottom:.3rem}
+.modal-box p{font-size:12px;color:var(--muted);margin-bottom:1.2rem}
+.modal-tabs{display:flex;gap:6px;margin-bottom:1.2rem}
+.mtab{flex:1;padding:8px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;transition:all .15s}
+.mtab.on{background:var(--g);color:#000;border-color:var(--g);font-weight:500}
+.auth-err{color:#ef5350;font-size:11px;margin-top:6px;display:none}
+.auth-success{color:var(--g2);font-size:11px;margin-top:6px;display:none}
+.user-chip{display:flex;align-items:center;gap:6px;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);border-radius:18px;padding:4px 10px;font-size:11px;color:var(--g2);cursor:pointer}
+.user-chip span{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* BOOKING HISTORY */
+.hist-wrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.3rem;margin-top:1.1rem;transition:background var(--tr)}
+.hist-search{display:flex;gap:8px;margin-bottom:.9rem}
+.hist-search input{flex:1;background:var(--dk);border:1px solid var(--bdr);color:var(--txt);padding:8px 12px;border-radius:8px;font-size:13px}
+.hist-search button{padding:8px 16px;background:var(--g);color:#000;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+.hist-item{background:var(--dk);border:1px solid var(--bdr);border-radius:8px;padding:.8rem;margin-bottom:.6rem;transition:background var(--tr)}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem}
+.hist-name{font-size:13px;font-weight:500;color:var(--txt)}
+.hist-date{font-size:11px;color:var(--muted)}
+.hist-detail{font-size:11px;color:var(--muted)}
+.hist-empty{text-align:center;color:var(--muted);font-size:13px;padding:1rem}
+
+/* FAQ */
+.faq-item{border-bottom:1px solid var(--bdr);padding:.8rem 0}
+.faq-item:last-child{border:none}
+.faq-q{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:13px;font-weight:500;color:var(--txt)}
+.faq-icon{color:var(--g2);font-size:16px;transition:transform .2s;flex-shrink:0}
+.faq-icon.open{transform:rotate(45deg)}
+.faq-a{font-size:12px;color:var(--muted);line-height:1.6;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .2s}
+.faq-a.open{max-height:200px;padding-top:.5rem}
+
+/* CANCEL POLICY */
+.policy-box{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.3rem;margin-bottom:1.1rem;transition:background var(--tr)}
+.policy-row{display:flex;align-items:flex-start;gap:10px;padding:.6rem 0;border-bottom:.5px solid var(--bdr)}
+.policy-row:last-child{border:none}
+.policy-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px}
+.pi-g{background:rgba(0,200,83,0.15);color:var(--g2)}
+.pi-r{background:rgba(229,57,53,0.12);color:#ef5350}
+.policy-txt h4{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:2px}
+.policy-txt p{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* PRICING */
+.price-sections{display:flex;flex-direction:column;gap:1rem}
+.ps{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;transition:background var(--tr)}
+.ps-head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.1rem;border-bottom:1px solid var(--bdr)}
+.ps-head h3{font-size:14px;font-weight:500;color:var(--txt)}
+.ps-time{font-size:11px;color:var(--muted)}
+.ps-price{font-size:1.3rem;font-weight:500;color:var(--g2);padding:.9rem 1.1rem;border-bottom:1px solid var(--bdr)}
+.ps-price span{font-size:11px;color:var(--muted);font-weight:400}
+.ps-features{list-style:none;padding:.65rem 1.1rem}
+.ps-features li{font-size:12px;color:var(--muted);padding:3px 0;border-bottom:.5px solid var(--bdr)}
+.ps-features li:last-child{border:none}
+.ps-features li::before{content:"+ ";color:var(--g)}
+.ps-book{width:calc(100% - 2.2rem);margin:0 1.1rem .9rem;padding:8px;border-radius:8px;border:1.5px solid var(--g);background:transparent;color:var(--g2);font-size:12px;cursor:pointer;transition:all .15s}
+.ps-book:hover{background:var(--g);color:#000}
+
+/* CHAT */
+.cwrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;transition:background var(--tr)}
+.ch{display:flex;align-items:center;gap:9px;padding:12px 14px;background:rgba(0,200,83,0.06);border-bottom:1px solid var(--bdr)}
+.av{width:30px;height:30px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;font-weight:500;flex-shrink:0}
+.cn{font-size:13px;font-weight:500;color:var(--txt)}.cs{font-size:10px;color:var(--g2)}
+.od{width:5px;height:5px;border-radius:50%;background:var(--g2);display:inline-block;margin-right:3px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.cchips{display:flex;gap:5px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--bdr)}
+.cc{padding:3px 10px;border-radius:13px;border:1px solid var(--bdr);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.cc:hover{border-color:var(--g);color:var(--g2)}
+.msgs{padding:12px;min-height:160px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.msg{padding:8px 12px;border-radius:12px;font-size:12px;max-width:88%;line-height:1.6}
+.msg.b{background:rgba(0,200,83,0.06);color:var(--txt);align-self:flex-start;border:1px solid var(--bdr)}
+.msg.u{background:var(--g);color:#000;align-self:flex-end}
+.cin{display:flex;gap:7px;padding:10px;border-top:1px solid var(--bdr)}
+.cin input{flex:1;background:var(--dk);border:1px solid var(--bdr);color:var(--txt);padding:8px 12px;border-radius:17px;font-size:12px}
+.cin input:focus{outline:none;border-color:var(--g)}
+.sbtn{background:var(--g);color:#000;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:bounce .9s infinite;display:inline-block;margin:0 2px}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ADMIN */
+.login-wrap{max-width:340px;margin:0 auto;background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.6rem;transition:background var(--tr)}
+.login-wrap h3{font-size:15px;font-weight:500;color:var(--txt);margin-bottom:.3rem;text-align:center}
+.login-wrap p{font-size:11px;color:var(--muted);text-align:center;margin-bottom:1rem}
+.apanel{display:none}.apanel.show{display:block}
+.role-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:18px;font-size:11px;margin-bottom:.9rem}
+.role-badge.mgr{background:rgba(21,101,192,0.12);border:1px solid rgba(21,101,192,0.25);color:#90caf9}
+.role-badge.sa{background:rgba(213,0,0,0.1);border:1px solid rgba(213,0,0,0.25);color:#ef9a9a}
+.scards{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin-bottom:1.1rem}
+.sc{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:.75rem;text-align:center;transition:background var(--tr)}
+.sc-n{font-size:1.1rem;font-weight:500;color:var(--g2)}.sc-l{font-size:10px;color:var(--muted);margin-top:2px}
+.atabs{display:flex;gap:6px;margin-bottom:1.1rem;flex-wrap:wrap}
+.at{padding:5px 12px;border-radius:15px;border:1px solid var(--bdr);font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s}
+.at.on{background:var(--g);color:#000;border-color:var(--g);font-weight:500}
+.btable{width:100%;border-collapse:collapse;font-size:12px}
+.btable th{text-align:left;padding:6px 8px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--bdr);font-weight:500;text-transform:uppercase}
+.btable td{padding:8px;border-bottom:.5px solid var(--bdr);color:var(--txt)}
+.bdg{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px}
+.bdg.cf{background:rgba(0,200,83,0.1);color:var(--g2)}
+.bdg.pd{background:rgba(255,214,0,0.1);color:#ffd600}
+.bdg.cx{background:rgba(229,57,53,0.1);color:#ef5350}
+.abtn{padding:2px 8px;border-radius:6px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;margin:1px;transition:all .15s}
+.abtn:hover{border-color:var(--g);color:var(--g2)}
+.abtn.del:hover{border-color:#ef5350;color:#ef5350}
+.abtn.wa{background:rgba(37,211,102,0.12);border-color:rgba(37,211,102,0.3);color:#69f0ae}
+.abtn.wa:hover{background:rgba(37,211,102,0.22);border-color:#25d366;color:#a5f3c1}
+.info-box{background:rgba(0,200,83,0.05);border:1px solid rgba(0,200,83,0.15);border-radius:8px;padding:9px 12px;font-size:11px;color:var(--muted);margin-bottom:.9rem;line-height:1.5}
+.block-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:5px;margin-top:.6rem}
+.blk-sl{padding:7px 3px;text-align:center;border-radius:8px;font-size:11px;cursor:pointer;border:1.5px solid var(--bdr);color:var(--muted);transition:all .15s;line-height:1.3}
+.blk-sl .blkp{font-size:9px;display:block;color:var(--muted)}
+.blk-sl.blocked{background:rgba(229,57,53,0.08);border-color:rgba(229,57,53,0.3);color:#ef9a9a}
+.blk-sl.bkd{opacity:.45;cursor:not-allowed}
+.blk-sl:not(.blocked):not(.bkd):hover{border-color:#ef5350;color:#ef9a9a}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr)}
+.srow:last-child{border:none}
+.srow label{font-size:12px;color:var(--txt)}
+.srow input,.srow select{background:var(--dk);border:1px solid var(--bdr);color:var(--txt);padding:6px 10px;border-radius:7px;font-size:12px;width:110px}
+.savebtn{padding:7px 18px;background:var(--g);color:#000;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;margin-top:.8rem}
+.price-override{background:var(--card);border:1px solid rgba(255,214,0,0.18);border-radius:10px;padding:.9rem;margin-top:.9rem;transition:background var(--tr)}
+.price-override h4{font-size:12px;color:#ffd600;font-weight:500;margin-bottom:.7rem}
+.ov-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:.5px solid var(--bdr);font-size:11px}
+
+/* REVENUE CHART */
+.rev-section{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.1rem;margin-bottom:1.1rem;transition:background var(--tr)}
+.rev-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:8px}
+.rev-header h4{font-size:13px;font-weight:500;color:var(--txt)}
+.rev-filter{display:flex;gap:5px}
+.rf{padding:4px 10px;border-radius:13px;border:1px solid var(--bdr);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.rf.on{background:var(--g);color:#000;border-color:var(--g)}
+.chart-wrap{position:relative;height:160px;width:100%;overflow-x:auto}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:130px;padding-bottom:20px;min-width:280px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:3px;position:relative;min-width:22px}
+.bar{width:100%;border-radius:4px 4px 0 0;background:var(--g);transition:height .4s ease;min-height:2px;opacity:.85;cursor:pointer;min-width:14px}
+.bar:hover{opacity:1}
+.bar-lbl{font-size:9px;color:var(--muted);position:absolute;bottom:0}
+.bar-val{font-size:9px;color:var(--g2);position:absolute;top:-14px}
+
+/* CALENDAR VIEW */
+.cal-wrap{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.1rem;transition:background var(--tr)}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+.cal-header h4{font-size:13px;font-weight:500;color:var(--txt)}
+.cal-nav{display:flex;gap:6px}
+.cn-btn{padding:4px 10px;border-radius:8px;border:1px solid var(--bdr);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s}
+.cn-btn:hover{border-color:var(--g);color:var(--g2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dh{text-align:center;font-size:10px;color:var(--muted);padding:4px 0}
+.cal-d{text-align:center;padding:6px 2px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid transparent;transition:all .15s;position:relative}
+.cal-d.avail{background:rgba(0,200,83,0.1);color:var(--g2);border-color:rgba(0,200,83,0.15)}
+.cal-d.busy{background:rgba(229,57,53,0.08);color:#ef9a9a;border-color:rgba(229,57,53,0.12)}
+.cal-d.full{background:rgba(229,57,53,0.15);color:#ef5350;border-color:rgba(229,57,53,0.2)}
+.cal-d.today{border-color:var(--g)!important;font-weight:500}
+.cal-d.empty{background:transparent;cursor:default}
+.cal-d:not(.empty):hover{transform:scale(1.08)}
+.cal-legend{display:flex;gap:12px;margin-top:.7rem;flex-wrap:wrap}
+.cl{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
+.cl-dot{width:8px;height:8px;border-radius:2px}
+
+/* LOADING SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,200,83,0.3);border-top-color:var(--g);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HAMBURGER */
+.hamburger{display:none;background:transparent;border:1px solid var(--bdr);color:var(--txt);width:40px;height:40px;border-radius:10px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .15s}
+.hamburger:hover{border-color:var(--g);color:var(--g2)}
+.hamburger svg{width:20px;height:20px}
+.nav-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:198}
+.nav-backdrop.open{display:block}
+
+@media(min-width:769px){.sgrid{grid-template-columns:repeat(5,1fr)}.block-grid{grid-template-columns:repeat(6,1fr)}}
+#mgr-bookings,#sa-bookings{overflow-x:auto;max-width:100%}
+#mgr-bookings .btable,#sa-bookings .btable{min-width:640px}
+
+@media(max-width:480px){
+  html,body{font-size:14px}
+  nav{padding:10px 14px;flex-wrap:nowrap}
+  .hamburger{display:flex;order:0}
+  .nav-links{position:fixed;top:0;left:-100%;width:78%;max-width:300px;height:100vh;background:var(--card);border-right:1px solid var(--bdr);flex-direction:column;flex-wrap:nowrap;gap:6px;padding:64px 16px 24px;z-index:199;overflow-y:auto;transition:left .25s ease;box-shadow:2px 0 22px rgba(0,0,0,0.4)}
+  .nav-links.open{left:0}
+  .nl{width:100%;font-size:14px;padding:13px 16px;min-height:48px;border-radius:10px;display:flex;align-items:center;border:1px solid transparent}
+  .nav-right{gap:6px;flex-shrink:0;margin-left:auto}
+  .nb{min-height:40px;padding:9px 14px;font-size:13px}
+  .hero{padding:1.6rem 1.1rem 1.4rem}
+  .hero h1{font-size:clamp(1.6rem,7.2vw,1.95rem);line-height:1.18}
+  .hstats{max-width:100%}
+  .hs{flex:1;padding:.7rem .25rem}
+  .hs-n{font-size:clamp(.9rem,3.6vw,1.1rem)}
+  .price-banner{margin:1rem .8rem}
+  .pb-grid{grid-template-columns:repeat(2,1fr)}
+  .gallery{grid-template-columns:repeat(2,1fr);padding:.9rem .8rem}
+  .review-grid{grid-template-columns:1fr}
+  .features{grid-template-columns:1fr;padding:.9rem .8rem}
+  .pi{padding:1.05rem .8rem}
+  .row2{grid-template-columns:1fr}
+  .sgrid{grid-template-columns:repeat(3,1fr)}
+  .sl{font-size:13px;padding:10px 4px;min-height:54px}
+  .cbtn,.savebtn{min-height:46px;font-size:14px}
+  .block-grid{grid-template-columns:repeat(3,1fr)}
+  .scards{grid-template-columns:repeat(2,1fr)}
+  .wa-float{width:48px;height:48px;bottom:16px;right:16px}
+  .wa-tooltip{display:none}
+}
+</style>
+</head><body>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal-box">
+    <h3>Welcome to EL Clasico</h3>
+    <p>Login বা signup করুন বুকিং করতে</p>
+    <div class="modal-tabs">
+      <button class="mtab on" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+      <button class="mtab" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <div id="auth-login-form">
+      <div class="fg" style="margin-bottom:10px"><label>Email</label><input type="email" id="login-email" placeholder="you@email.com"></div>
+      <div class="fg" style="margin-bottom:14px"><label>Password</label><input type="password" id="login-pw" placeholder="Password"></div>
+      <button class="cbtn" onclick="doLogin()" id="login-btn">Login</button>
+    </div>
+    <div id="auth-signup-form" style="display:none">
+      <div class="fg" style="margin-bottom:10px"><label>Name</label><input type="text" id="signup-name" placeholder="Ahmed Hossain"></div>
+      <div class="fg" style="margin-bottom:10px"><label>Phone (WhatsApp)</label><input type="text" id="signup-phone" placeholder="01633305811"></div>
+      <div class="fg" style="margin-bottom:10px"><label>Email</label><input type="email" id="signup-email" placeholder="you@email.com"></div>
+      <div class="fg" style="margin-bottom:14px"><label>Password</label><input type="password" id="signup-pw" placeholder="Min 6 characters"></div>
+      <button class="cbtn" onclick="doSignup()" id="signup-btn">Create Account</button>
+    </div>
+    <p class="auth-err" id="auth-err"></p>
+    <p class="auth-success" id="auth-success"></p>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="closeAuthModal()" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer">Skip for now</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button class="hamburger" id="hamburger" onclick="toggleNav()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+  <div class="logo" onclick="goPage('home')">EL <b>CLASICO</b></div>
+  <div class="nav-links" id="nav-links">
+    <div class="nl active" id="nl-home" onclick="goPage('home')">Home</div>
+    <div class="nl" id="nl-book" onclick="goPage('book')">Book</div>
+    <div class="nl" id="nl-pricing" onclick="goPage('pricing')">Pricing</div>
+    <div class="nl" id="nl-info" onclick="goPage('info')">Info</div>
+    <div class="nl" id="nl-chat" onclick="goPage('chat')">AI Chat</div>
+    <div class="nl" id="nl-manager" onclick="goPage('manager')">Manager</div>
+    <div class="nl" id="nl-sadmin" onclick="goPage('sadmin')">Super Admin</div>
+  </div>
+  <div class="nav-right">
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-icon">🌙</button>
+    <div id="nav-auth-area">
+      <button class="nb" onclick="openAuthModal()">Login</button>
+    </div>
+  </div>
+</nav>
+<div class="nav-backdrop" id="nav-backdrop" onclick="closeNav()"></div>
+
+<!-- FLOATING WHATSAPP -->
+<div class="wa-float" onclick="window.open('https://wa.me/8801633305811','_blank')">
+  <svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+  <div class="wa-tooltip">WhatsApp করুন</div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <div class="lb-close">✕</div>
+  <div class="lb-img" id="lb-img">⚽</div>
+  <p id="lb-caption" style="color:#fff;font-size:13px">Main turf — full floodlights</p>
+</div>
+
+<!-- HOME -->
+<div class="page show" id="page-home">
+  <div class="hero">
+    <div class="hero-badge">Premium Football Arena — Noakhali</div>
+    <h1>EL <b>CLASICO</b><br>Football Arena</h1>
+    <p>Noakhali-র সেরা turf — ২৪ ঘণ্টা, ৭ দিন খোলা</p>
+    <div class="hbtns">
+      <button class="btn-g" onclick="goPage('book')">Book a slot</button>
+      <button class="btn-o" onclick="goPage('pricing')">See pricing</button>
+    </div>
+    <div class="hstats">
+      <div class="hs"><div class="hs-n">24/7</div><div class="hs-l">Always open</div></div>
+      <div class="hs"><div class="hs-n">৳1200</div><div class="hs-l">From /hr</div></div>
+      <div class="hs"><div class="hs-n">4.9★</div><div class="hs-l">Rating</div></div>
+      <div class="hs"><div class="hs-n">150+</div><div class="hs-l">Teams</div></div>
+    </div>
+  </div>
+
+  <div class="social-bar">
+    <a class="soc-btn soc-fb" href="https://www.facebook.com/elclasicofootballarena" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#90b8f8"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>Facebook</a>
+    <a class="soc-btn soc-ig" href="https://www.instagram.com/elclasicofootballarena/" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f48fb1" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>Instagram</a>
+    <a class="soc-btn soc-wa" href="https://wa.me/8801633305811" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#69f0ae"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>WhatsApp</a>
+  </div>
+
+  <div class="price-banner">
+    <div class="pb-title">Hourly rates by time</div>
+    <div class="pb-grid">
+      <div class="pb-item"><div class="pb-time">6 AM – 9 AM</div><div class="pb-price">৳1500</div><span class="pb-tag tag-early">Early bird</span></div>
+      <div class="pb-item"><div class="pb-time">9 AM – 3 PM</div><div class="pb-price">৳1200</div><span class="pb-tag tag-day">Daytime</span></div>
+      <div class="pb-item"><div class="pb-time">3 PM – 6 PM</div><div class="pb-price">৳1800</div><span class="pb-tag tag-eve">Evening</span></div>
+      <div class="pb-item"><div class="pb-time">6 PM – 6 AM</div><div class="pb-price">৳2500</div><span class="pb-tag tag-night">Night peak</span></div>
+    </div>
+  </div>
+
+  <div style="padding:1.2rem;padding-bottom:.4rem">
+    <div class="sec-h" style="font-size:.95rem">Photo gallery</div>
+  </div>
+  <div class="gallery">
+    <div class="gal-item" onclick="openLightbox('⚽','Main turf — full floodlights')"><div class="gal-img g1">⚽</div><div class="gal-label">Main turf</div></div>
+    <div class="gal-item" onclick="openLightbox('🌙','Night session — 6 PM to 6 AM')"><div class="gal-img g2">🌙</div><div class="gal-label">Night games</div></div>
+    <div class="gal-item" onclick="openLightbox('🏟️','Seating area for spectators')"><div class="gal-img g3">🏟️</div><div class="gal-label">Seating area</div></div>
+    <div class="gal-item" onclick="openLightbox('🚿','Clean changing rooms')"><div class="gal-img g4">🚿</div><div class="gal-label">Changing room</div></div>
+    <div class="gal-item" onclick="openLightbox('💡','Professional floodlights')"><div class="gal-img g5">💡</div><div class="gal-label">Floodlights</div></div>
+    <div class="gal-item" onclick="openLightbox('🏆','Tournament setup')"><div class="gal-img g6">🏆</div><div class="gal-label">Tournaments</div></div>
+  </div>
+
+  <div class="reviews-section">
+    <div class="reviews-header">
+      <h3>Customer reviews</h3>
+      <div class="overall-rating"><div class="big-star">4.9</div><div><div class="stars">★★★★★</div><div style="font-size:10px;color:var(--muted)">48 reviews</div></div></div>
+    </div>
+    <div class="review-grid" id="review-grid"></div>
+    <button class="add-review-btn" onclick="toggleReviewForm()">+ Leave a review</button>
+    <div class="review-form" id="review-form">
+      <div class="star-picker" id="star-picker">
+        <span class="sp on" onclick="setStar(1)">★</span><span class="sp on" onclick="setStar(2)">★</span>
+        <span class="sp on" onclick="setStar(3)">★</span><span class="sp on" onclick="setStar(4)">★</span>
+        <span class="sp on" onclick="setStar(5)">★</span>
+      </div>
+      <div class="fg" style="margin-bottom:8px"><label>Your name</label><input type="text" id="rev-name" placeholder="Ahmed Hossain"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Your review</label><textarea id="rev-text" rows="2" placeholder="Share your experience..." style="resize:none"></textarea></div>
+      <button class="cbtn" onclick="submitReview()">Submit review</button>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feat"><div class="feat-icon">⚽</div><h3>Premium turf</h3><p>Synthetic grass with full floodlights — perfect night games.</p></div>
+    <div class="feat"><div class="feat-icon">📅</div><h3>Real-time booking</h3><p>Live slot availability — powered by Supabase database.</p></div>
+    <div class="feat"><div class="feat-icon">🤖</div><h3>AI assistant</h3><p>Bangla or English — pricing, availability, booking help.</p></div>
+    <div class="feat"><div class="feat-icon">🏆</div><h3>Tournaments</h3><p>5v5, 7v7 or 11v11. Referee on request.</p></div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-links">
+      <a href="https://www.facebook.com/elclasicofootballarena" target="_blank">Facebook</a>
+      <a href="https://www.instagram.com/elclasicofootballarena/" target="_blank">Instagram</a>
+      <a href="https://wa.me/8801633305811" target="_blank">WhatsApp</a>
+    </div>
+    <p>EL Clasico Football Arena — Noakhali &nbsp;|&nbsp; 01633-305811</p>
+  </div>
+</div>
+
+<!-- BOOK -->
+<div class="page" id="page-book">
+  <div class="pi">
+    <div class="sec-h">Book your slot</div>
+    <div id="book-login-notice" style="display:none;background:rgba(0,200,83,0.06);border:1px solid rgba(0,200,83,0.2);border-radius:10px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--muted)">
+      💡 <a href="#" onclick="openAuthModal();return false;" style="color:var(--g2)">Login করুন</a> — বুকিং history save হবে এবং confirmation পাবেন।
+    </div>
+    <div class="bwrap">
+      <div class="row2">
+        <div class="fg"><label>Your name</label><input type="text" id="b-name" placeholder="Ahmed Hossain"></div>
+        <div class="fg">
+          <label>Phone <span class="wa-badge">WhatsApp</span></label>
+          <input type="text" id="b-phone" placeholder="01633-305811">
+          <span class="wa-hint">Confirmation sent via WhatsApp</span>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Date</label><input type="date" id="b-date" onchange="buildSlots()"></div>
+        <div class="fg"><label>Start time</label><input type="time" id="b-time" value="18:00" onchange="buildSlots()"></div>
+      </div>
+      <div class="dur-row"><span>Duration:</span>
+        <div class="dbtns">
+          <button class="db on" onclick="setDur(60,this)">1 hour</button>
+          <button class="db" onclick="setDur(90,this)">1.5 hr</button>
+          <button class="db" onclick="setDur(120,this)">2 hours</button>
+        </div>
+      </div>
+      <div class="stitle">Select a time slot</div>
+      <div class="sgrid" id="sgrid"><div style="color:var(--muted);font-size:12px;padding:8px">Date বেছে নিন →</div></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Email (optional)</label><input type="email" id="b-email" placeholder="you@email.com"></div>
+      <div class="fg"><label>Note (optional)</label><input type="text" id="b-note" placeholder="e.g. birthday match"></div>
+    </div>
+    <div class="fg" style="margin-bottom:11px">
+      <label>Bkash TrxID <span style="font-size:10px;color:var(--muted)">(Advance ৳500)</span></label>
+      <input type="text" id="b-bkash" placeholder="e.g. 8DF3K2P1Q0">
+    </div>
+    <div class="total-b"><span>Total for <span id="dur-label">1 hour</span></span><strong id="total-amt">৳2,500</strong></div>
+    <button class="cbtn" onclick="confirmBook()" id="confirm-btn">Confirm booking</button>
+    <div class="sbox" id="sbox">
+      <h3>Booking confirmed! ✅</h3>
+      <p id="smsg"></p>
+      <div class="wa-confirm"><a href="https://wa.me/8801633305811" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#69f0ae"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+        WhatsApp — 01633-305811</a>
+      </div>
+    </div>
+    <div class="hist-wrap">
+      <div style="font-size:13px;font-weight:500;color:var(--txt);margin-bottom:.7rem">Check your bookings</div>
+      <div id="my-bookings-area">
+        <div class="hist-search">
+          <input type="text" id="hist-phone" placeholder="Enter your phone number">
+          <button onclick="searchHistory()">Search</button>
+        </div>
+        <div id="hist-results"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="page" id="page-pricing">
+  <div class="pi">
+    <div class="sec-h">Pricing — by time slot</div>
+    <div class="price-sections">
+      <div class="ps"><div class="ps-head"><h3>Daytime — cheapest</h3><span class="ps-time">9:00 AM – 3:00 PM</span></div><div class="ps-price">৳1200<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+      <div class="ps"><div class="ps-head"><h3>Early morning</h3><span class="ps-time">6:00 AM – 9:00 AM</span></div><div class="ps-price">৳1500<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+      <div class="ps"><div class="ps-head"><h3>Afternoon</h3><span class="ps-time">3:00 PM – 6:00 PM</span></div><div class="ps-price">৳1800<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water + snacks</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+      <div class="ps"><div class="ps-head"><h3>Night peak</h3><span class="ps-time">6:00 PM – 6:00 AM</span></div><div class="ps-price">৳2500<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Full floodlights</li><li>Changing room</li><li>Water + snacks</li><li>Priority booking</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO -->
+<div class="page" id="page-info">
+  <div class="pi">
+    <div class="sec-h">Cancellation policy</div>
+    <div class="policy-box">
+      <div class="policy-row"><div class="policy-icon pi-g">✓</div><div class="policy-txt"><h4>২৪ ঘণ্টার বেশি আগে — Advance ফেরত</h4><p>Slot এর কমপক্ষে ২৪ ঘণ্টা আগে cancel করলে ৳৫০০ advance payment সম্পূর্ণ ফেরত পাবেন।</p></div></div>
+      <div class="policy-row"><div class="policy-icon pi-r">✗</div><div class="policy-txt"><h4>২৪ ঘণ্টার মধ্যে — Cancel সম্ভব নয়</h4><p>Slot শুরুর ২৪ ঘণ্টার মধ্যে কোনো cancel বা refund হবে না।</p></div></div>
+      <div class="policy-row"><div class="policy-icon pi-r">✗</div><div class="policy-txt"><h4>No-show — কোনো refund নেই</h4><p>না আসলে বা cancel না করলে booking amount ফেরত পাবেন না।</p></div></div>
+    </div>
+    <div class="sec-h">FAQ</div>
+    <div class="bwrap" style="padding:.5rem 1rem" id="faq-wrap"></div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="page" id="page-chat">
+  <div class="pi">
+    <div class="sec-h">AI assistant</div>
+    <div class="cwrap">
+      <div class="ch"><div class="av">AI</div><div><div class="cn">EL Clasico Assistant</div><div class="cs"><span class="od"></span>Online — powered by Claude</div></div></div>
+      <div class="cchips">
+        <div class="cc" onclick="askq('Is the turf available right now?')">Available now?</div>
+        <div class="cc" onclick="askq('What are the prices?')">Pricing</div>
+        <div class="cc" onclick="askq('What time is cheapest?')">Cheapest time</div>
+        <div class="cc" onclick="askq('How do I cancel?')">Cancel policy</div>
+        <div class="cc" onclick="askq('আপনাদের কি পার্কিং আছে?')">পার্কিং?</div>
+      </div>
+      <div class="msgs" id="msgs"><div class="msg b">Assalamu Alaikum! I'm the EL Clasico AI. Ask me anything in Bangla or English — pricing, availability, booking, or cancellation! WhatsApp: 01633-305811</div></div>
+      <div class="cin">
+        <input type="text" id="cinp" placeholder="Ask in Bangla or English..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="sbtn" onclick="sendMsg()">►</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGER -->
+<div class="page" id="page-manager">
+  <div class="pi">
+    <div id="mgr-auth-check">
+      <div class="login-wrap">
+        <h3>Manager Login</h3>
+        <p>Supabase account দিয়ে login করুন (manager role থাকতে হবে)</p>
+        <div class="fg" style="margin-bottom:10px"><label>Email</label><input type="email" id="mgr-email" placeholder="manager@email.com"></div>
+        <div class="fg" style="margin-bottom:14px"><label>Password</label><input type="password" id="mgr-pw" placeholder="Password" onkeydown="if(event.key==='Enter')mgrLogin()"></div>
+        <button class="cbtn" onclick="mgrLogin()" id="mgr-login-btn">Login</button>
+        <p id="mgr-err" style="color:#ef5350;font-size:11px;margin-top:7px;text-align:center;display:none"></p>
+      </div>
+    </div>
+    <div id="mgr-panel" class="apanel">
+      <div class="role-badge mgr">Manager access</div>
+      <div class="scards" id="mgr-stats"></div>
+      <div class="atabs">
+        <div class="at on" onclick="mgrTab('bookings',this)">All bookings</div>
+        <div class="at" onclick="mgrTab('newbook',this)">Add booking</div>
+        <div class="at" onclick="mgrTab('block',this)">Block slots</div>
+      </div>
+      <div id="mgr-bookings"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+      <div id="mgr-newbook" style="display:none">
+        <div class="info-box">Add a booking for walk-ins or phone reservations.</div>
+        <div class="row2"><div class="fg"><label>Name</label><input type="text" id="m-name" placeholder="Customer name"></div><div class="fg"><label>Phone</label><input type="text" id="m-phone" placeholder="017XXXXXXXX"></div></div>
+        <div class="row2"><div class="fg"><label>Date</label><input type="date" id="m-date"></div><div class="fg"><label>Time</label><input type="time" id="m-time" value="18:00" onchange="updateMTotal()"></div></div>
+        <div class="dur-row"><span>Duration:</span><div class="dbtns" id="m-dbtns">
+          <button class="db on" onclick="setMDur(60,this)">1 hr</button>
+          <button class="db" onclick="setMDur(90,this)">1.5 hr</button>
+          <button class="db" onclick="setMDur(120,this)">2 hr</button>
+        </div></div>
+        <div class="total-b" style="margin-bottom:.7rem"><span>Total</span><strong id="m-total">৳2,500</strong></div>
+        <button class="cbtn" onclick="mgrAddBook()">Add booking</button>
+        <div class="sbox" id="m-sbox" style="margin-top:.9rem"><h3>Added!</h3><p id="m-smsg"></p></div>
+      </div>
+      <div id="mgr-block" style="display:none">
+        <div class="info-box">Click any slot to block/unblock it for customers.</div>
+        <div class="row2"><div class="fg"><label>Date</label><input type="date" id="blk-date" onchange="renderBlockGrid('blk-grid','blk-date')"></div></div>
+        <div class="block-grid" id="blk-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPER ADMIN -->
+<div class="page" id="page-sadmin">
+  <div class="pi">
+    <div id="sa-auth-check">
+      <div class="login-wrap">
+        <h3>Super Admin</h3>
+        <p>Owner-level access — superadmin role থাকতে হবে</p>
+        <div class="fg" style="margin-bottom:10px"><label>Email</label><input type="email" id="sa-email" placeholder="admin@email.com"></div>
+        <div class="fg" style="margin-bottom:14px"><label>Password</label><input type="password" id="sa-pw" placeholder="Password" onkeydown="if(event.key==='Enter')saLogin()"></div>
+        <button class="cbtn" onclick="saLogin()" id="sa-login-btn">Login</button>
+        <p id="sa-err" style="color:#ef5350;font-size:11px;margin-top:7px;text-align:center;display:none"></p>
+      </div>
+    </div>
+    <div id="sa-panel" class="apanel">
+      <div class="role-badge sa">Super Admin — full control</div>
+      <div class="scards" id="sa-stats"></div>
+      <div class="atabs">
+        <div class="at on" onclick="saTab('bookings',this)">Bookings</div>
+        <div class="at" onclick="saTab('revenue',this)">Revenue</div>
+        <div class="at" onclick="saTab('calendar',this)">Calendar</div>
+        <div class="at" onclick="saTab('block',this)">Block slots</div>
+        <div class="at" onclick="saTab('pricing',this)">Pricing</div>
+      </div>
+      <div id="sa-bookings"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+      <div id="sa-revenue" style="display:none">
+        <div class="rev-section">
+          <div class="rev-header"><h4>Revenue overview</h4>
+            <div class="rev-filter">
+              <div class="rf on" onclick="setRevFilter('week',this)">Week</div>
+              <div class="rf" onclick="setRevFilter('month',this)">Month</div>
+            </div>
+          </div>
+          <div class="chart-wrap"><div id="rev-bars" class="bar-chart"></div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.8rem">
+            <div class="sc"><div class="sc-n" id="rev-total">—</div><div class="sc-l">Total revenue</div></div>
+            <div class="sc"><div class="sc-n" id="rev-avg">—</div><div class="sc-l">Avg per day</div></div>
+            <div class="sc"><div class="sc-n" id="rev-bookings">—</div><div class="sc-l">Bookings</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="sa-calendar" style="display:none">
+        <div class="cal-wrap">
+          <div class="cal-header"><h4 id="cal-title"></h4>
+            <div class="cal-nav">
+              <button class="cn-btn" onclick="calNav(-1)">‹</button>
+              <button class="cn-btn" onclick="calNav(1)">›</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <div class="cl"><div class="cl-dot" style="background:rgba(0,200,83,0.3)"></div>Available</div>
+            <div class="cl"><div class="cl-dot" style="background:rgba(229,57,53,0.2)"></div>Partially booked</div>
+            <div class="cl"><div class="cl-dot" style="background:rgba(229,57,53,0.4)"></div>Fully booked</div>
+          </div>
+        </div>
+      </div>
+      <div id="sa-block" style="display:none">
+        <div class="info-box">Block any slot for any date.</div>
+        <div class="row2"><div class="fg"><label>Date</label><input type="date" id="sa-blk-date" onchange="renderBlockGrid('sa-blk-grid','sa-blk-date')"></div></div>
+        <div class="block-grid" id="sa-blk-grid"></div>
+      </div>
+      <div id="sa-pricing" style="display:none">
+        <div class="info-box">Change base rates (saved to Supabase).</div>
+        <div class="srow"><label>6 PM – 6 AM (night)</label><input type="number" id="sp-night" value="2500"></div>
+        <div class="srow"><label>6 AM – 9 AM (early)</label><input type="number" id="sp-early" value="1500"></div>
+        <div class="srow"><label>9 AM – 3 PM (day)</label><input type="number" id="sp-day" value="1200"></div>
+        <div class="srow"><label>3 PM – 6 PM (afternoon)</label><input type="number" id="sp-eve" value="1800"></div>
+        <button class="savebtn" onclick="savePricing()">Save base prices</button>
+        <p id="price-saved" style="color:var(--g2);font-size:11px;margin-top:7px;display:none">Saved!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG — তোমার keys এখানে
+// ============================================================
+const SUPABASE_URL = 'https://ndzhkclijmnjqslkupdj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kemhrY2xpam1uanFzbGt1cGRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODMzMzYsImV4cCI6MjA5MzE1OTMzNn0.q8y2X7IIuGa0vAzGdJg_Mp8JiYGRcCycR8ot8jNQYak';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;
+let currentProfile = null;
+let adminRole = null; // 'manager' | 'superadmin' | null
+let basePrices = {night:2500, early:1500, day:1200, eve:1800};
+let priceOverrides = [];
+let blockedSlots = {}; // {date: [time, ...]}
+let selDur = 60, mgrDur = 60;
+let isDark = true;
+let calYear, calMonth;
+let revFilter = 'week';
+let selStars = 5;
+let reviews = [
+  {name:'Karim M.',stars:5,text:'সেরা turf! রাতের আলো অসাধারণ। দলের সবাই মুগ্ধ।',time:'2 days ago'},
+  {name:'Rafiq A.',stars:5,text:'Booking process very easy. Great experience overall!',time:'1 week ago'},
+  {name:'Sumon H.',stars:4,text:'ভালো turf, দাম একটু বেশি। তবে quality এর জন্য worth it।',time:'2 weeks ago'},
+];
+const today = new Date().toISOString().slice(0,10);
+const now2 = new Date();
+calYear = now2.getFullYear();
+calMonth = now2.getMonth();
+
+// ============================================================
+// AUTH
+// ============================================================
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await handleSession(session);
+  sb.auth.onAuthStateChange(async (_ev, session) => {
+    if (session) await handleSession(session);
+    else { currentUser = null; currentProfile = null; adminRole = null; updateNavAuth(); }
+  });
+}
+
+async function handleSession(session) {
+  currentUser = session.user;
+  // Load profile
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+  // Check admin role
+  const { data: adm } = await sb.from('admins').select('role').eq('id', currentUser.id).single();
+  adminRole = adm ? adm.role : null;
+  updateNavAuth();
+}
+
+function updateNavAuth() {
+  const area = document.getElementById('nav-auth-area');
+  if (currentUser) {
+    const name = currentProfile?.name || currentUser.email.split('@')[0];
+    area.innerHTML = `<div class="user-chip" onclick="handleLogout()"><span>👤 ${name}</span></div>`;
+    document.getElementById('book-login-notice').style.display = 'none';
+  } else {
+    area.innerHTML = `<button class="nb" onclick="openAuthModal()">Login</button>`;
+    document.getElementById('book-login-notice').style.display = 'block';
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if (!email || !pw) { showAuthErr('Email ও password দিন'); return; }
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spin"></span>Logging in...'; btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  btn.innerHTML = 'Login'; btn.disabled = false;
+  if (error) showAuthErr(error.message);
+  else { closeAuthModal(); }
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const phone = document.getElementById('signup-phone').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pw = document.getElementById('signup-pw').value;
+  if (!name || !email || !pw) { showAuthErr('সব field পূরণ করুন'); return; }
+  const btn = document.getElementById('signup-btn');
+  btn.innerHTML = '<span class="spin"></span>Creating...'; btn.disabled = true;
+  const { data, error } = await sb.auth.signUp({ email, password: pw });
+  if (error) { btn.innerHTML = 'Create Account'; btn.disabled = false; showAuthErr(error.message); return; }
+  // Save profile
+  if (data.user) {
+    await sb.from('profiles').upsert({ id: data.user.id, name, phone });
+  }
+  btn.innerHTML = 'Create Account'; btn.disabled = false;
+  showAuthSuccess('Account তৈরি হয়েছে! Email confirm করুন যদি লাগে।');
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  adminRole = null;
+}
+
+function openAuthModal() { document.getElementById('auth-modal').classList.add('open'); }
+function closeAuthModal() { document.getElementById('auth-modal').classList.remove('open'); }
+function switchAuthTab(tab) {
+  document.getElementById('auth-login-form').style.display = tab==='login' ? 'block' : 'none';
+  document.getElementById('auth-signup-form').style.display = tab==='signup' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('on', tab==='login');
+  document.getElementById('tab-signup').classList.toggle('on', tab==='signup');
+  hideAuthMessages();
+}
+function showAuthErr(msg) { const e=document.getElementById('auth-err'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-success').style.display='none'; }
+function showAuthSuccess(msg) { const e=document.getElementById('auth-success'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-err').style.display='none'; }
+function hideAuthMessages() { document.getElementById('auth-err').style.display='none'; document.getElementById('auth-success').style.display='none'; }
+
+// ============================================================
+// BOOKING ENGINE
+// ============================================================
+const allSlots = ['00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00'];
+
+function toMin(t){const p=String(t).split(':');return(parseInt(p[0])||0)*60+(parseInt(p[1])||0);}
+function fromMin(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function fmtTime(t){const m=toMin(t),h=Math.floor(m/60),mm=m%60,ap=h>=12&&h<24?'PM':'AM',h12=h%12===0?12:h%12;return(mm===0?h12:h12+':'+String(mm).padStart(2,'0'))+' '+ap;}
+function rangesOverlap(aS,aE,bS,bE){return aS<bE&&aE>bS;}
+function getTimeRate(t){const h=parseInt(t);if(h>=18||h<6)return basePrices.night;if(h>=6&&h<9)return basePrices.early;if(h>=9&&h<15)return basePrices.day;return basePrices.eve;}
+function calcAmt(t,dur){const ov=priceOverrides.find(o=>o.time===t&&o.dur===dur);return ov?ov.price:Math.round(getTimeRate(t)*(dur/60));}
+function slotLbl(h){return h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM';}
+
+// Load bookings for a date from Supabase
+async function getBookedRanges(date) {
+  const { data } = await sb.from('bookings')
+    .select('time, duration_minutes')
+    .eq('booking_date', date)
+    .neq('status', 'cancelled');
+  return (data||[]).map(b => { const s=toMin(b.time.slice(0,5)); return {start:s, end:s+(b.duration_minutes||60)}; });
+}
+
+function getBlockedRanges(date) {
+  return (blockedSlots[date]||[]).map(t => { const s=toMin(t); return {start:s, end:s+60}; });
+}
+
+async function isSlotFree(date, startMin, durMin) {
+  const endMin = startMin + durMin;
+  if (endMin > 1440) return false;
+  const taken = (await getBookedRanges(date)).concat(getBlockedRanges(date));
+  return !taken.some(t => rangesOverlap(startMin, endMin, t.start, t.end));
+}
+
+async function buildSlots() {
+  const g = document.getElementById('sgrid'); if(!g) return;
+  const dv = document.getElementById('b-date').value; if(!dv){ updateTotal(); return; }
+  g.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Checking availability...</div>';
+  const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
+  const currentTime = document.getElementById('b-time').value;
+  const bookedRanges = await getBookedRanges(dv);
+  const blockedRanges = getBlockedRanges(dv);
+  const taken = bookedRanges.concat(blockedRanges);
+  g.innerHTML = '';
+  for(let h=0; h<24; h++) {
+    const tStr = String(h).padStart(2,'0') + ':00';
+    const sMin = h*60, eMin = sMin+selDur;
+    const lbl = fmtTime(tStr);
+    const el = document.createElement('div');
+    const isPast = isToday && sMin < nowMin;
+    const isBooked = taken.some(t => rangesOverlap(sMin, eMin, t.start, t.end));
+    const overflow = eMin > 1440;
+    if(isPast) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>'; }
+    else if(overflow||isBooked) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">'+(isBooked?'Booked':'N/A')+'</span>'; }
+    else {
+      const bEndLbl = fmtTime(fromMin(eMin));
+      const amt = calcAmt(tStr, selDur);
+      el.className = 'sl ok';
+      el.innerHTML = lbl + `<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
+      if(tStr===currentTime) el.classList.add('sel');
+      el.onclick = function() {
+        document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
+        el.classList.add('sel');
+        document.getElementById('b-time').value = tStr;
+        updateTotal();
+      };
+    }
+    g.appendChild(el);
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  const t=document.getElementById('b-time').value;
+  const a=calcAmt(t,selDur);
+  document.getElementById('total-amt').textContent='৳'+a.toLocaleString();
+  const dl={60:'1 hour',90:'1.5 hours',120:'2 hours'};
+  document.getElementById('dur-label').textContent=dl[selDur]||selDur+' min';
+}
+function updateMTotal(){const t=document.getElementById('m-time').value;document.getElementById('m-total').textContent='৳'+calcAmt(t,mgrDur).toLocaleString();}
+function setDur(m,el){selDur=m;document.querySelectorAll('#page-book .db').forEach(b=>b.classList.remove('on'));el.classList.add('on');buildSlots();}
+function setMDur(m,el){mgrDur=m;document.querySelectorAll('#m-dbtns .db').forEach(b=>b.classList.remove('on'));el.classList.add('on');updateMTotal();}
+
+async function confirmBook() {
+  const name=document.getElementById('b-name').value.trim();
+  const phone=document.getElementById('b-phone').value.trim();
+  const date=document.getElementById('b-date').value;
+  const time=document.getElementById('b-time').value;
+  if(!name||!phone||!date||!time){alert('Name, phone, date ও time দিন!');return;}
+  const btn=document.getElementById('confirm-btn');
+  btn.innerHTML='<span class="spin"></span>Saving...';btn.disabled=true;
+  const startMin=toMin(time);
+  const isFree=await isSlotFree(date,startMin,selDur);
+  if(!isFree){alert('এই slot টি booked। অন্য time বেছে নিন।');await buildSlots();btn.innerHTML='Confirm booking';btn.disabled=false;return;}
+  const amt=calcAmt(time,selDur);
+  const bkash=document.getElementById('b-bkash').value.trim();
+  const note=document.getElementById('b-note').value.trim();
+  const bookingData={
+    name,phone,
+    booking_date:date,
+    time:time+':00',
+    duration_minutes:selDur,
+    amount:amt,
+    status:'confirmed',
+    bkash_trxid:bkash||null,
+    note:note||null,
+  };
+  if(currentUser) bookingData.user_id=currentUser.id;
+  const {error}=await sb.from('bookings').insert(bookingData);
+  btn.innerHTML='Confirm booking';btn.disabled=false;
+  if(error){alert('Error: '+error.message);return;}
+  await buildSlots();
+  document.getElementById('smsg').textContent=`${name} — ${date} at ${fmtTime(time)} for ${selDur} min. Total: ৳${amt.toLocaleString()}`;
+  document.getElementById('sbox').style.display='block';
+  document.getElementById('sbox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function searchHistory() {
+  const ph=document.getElementById('hist-phone').value.trim();
+  const res=document.getElementById('hist-results');
+  if(!ph){res.innerHTML='<div class="hist-empty">Phone number দিন</div>';return;}
+  res.innerHTML='<div class="hist-empty"><span class="spin"></span>Searching...</div>';
+  const {data}=await sb.from('bookings').select('*').ilike('phone','%'+ph.replace(/[-\s]/g,'')+'%').order('booking_date',{ascending:false});
+  if(!data||!data.length){res.innerHTML='<div class="hist-empty">কোনো booking পাওয়া যায়নি</div>';return;}
+  res.innerHTML=data.map(b=>`<div class="hist-item"><div class="hist-top"><span class="hist-name">${b.name}</span><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></div><div class="hist-date">${b.booking_date} at ${b.time?b.time.slice(0,5):''} — ${b.duration_minutes} min</div><div class="hist-detail">Amount: ৳${(b.amount||0).toLocaleString()}</div></div>`).join('');
+}
+
+// ============================================================
+// MANAGER LOGIN
+// ============================================================
+async function mgrLogin() {
+  const email=document.getElementById('mgr-email').value.trim();
+  const pw=document.getElementById('mgr-pw').value;
+  if(!email||!pw){showMgrErr('Email ও password দিন');return;}
+  const btn=document.getElementById('mgr-login-btn');
+  btn.innerHTML='<span class="spin"></span>Checking...';btn.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  btn.innerHTML='Login';btn.disabled=false;
+  if(error){showMgrErr('Login failed: '+error.message);return;}
+  const {data:adm}=await sb.from('admins').select('role').eq('id',(await sb.auth.getUser()).data.user.id).single();
+  if(!adm||!['manager','superadmin'].includes(adm.role)){showMgrErr('আপনার manager access নেই');await sb.auth.signOut();return;}
+  adminRole=adm.role;
+  document.getElementById('mgr-auth-check').style.display='none';
+  document.getElementById('mgr-panel').classList.add('show');
+  loadAdminPanel();
+}
+function showMgrErr(msg){const e=document.getElementById('mgr-err');e.textContent=msg;e.style.display='block';}
+
+async function saLogin() {
+  const email=document.getElementById('sa-email').value.trim();
+  const pw=document.getElementById('sa-pw').value;
+  if(!email||!pw){showSaErr('Email ও password দিন');return;}
+  const btn=document.getElementById('sa-login-btn');
+  btn.innerHTML='<span class="spin"></span>Checking...';btn.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  btn.innerHTML='Login';btn.disabled=false;
+  if(error){showSaErr('Login failed: '+error.message);return;}
+  const {data:adm}=await sb.from('admins').select('role').eq('id',(await sb.auth.getUser()).data.user.id).single();
+  if(!adm||adm.role!=='superadmin'){showSaErr('SuperAdmin access নেই');await sb.auth.signOut();return;}
+  adminRole='superadmin';
+  document.getElementById('sa-auth-check').style.display='none';
+  document.getElementById('sa-panel').classList.add('show');
+  loadSaPanel();
+}
+function showSaErr(msg){const e=document.getElementById('sa-err');e.textContent=msg;e.style.display='block';}
+
+// ============================================================
+// ADMIN PANEL — load bookings from Supabase
+// ============================================================
+async function loadAdminPanel() {
+  const {data}=await sb.from('bookings').select('*').order('booking_date',{ascending:false});
+  renderAdminTable('mgr-bookings', data||[]);
+  renderStats('mgr-stats', data||[]);
+  document.getElementById('m-date').value=today;
+  document.getElementById('blk-date').value=today;
+  renderBlockGrid('blk-grid','blk-date');
+  updateMTotal();
+}
+
+async function loadSaPanel() {
+  const {data}=await sb.from('bookings').select('*').order('booking_date',{ascending:false});
+  renderAdminTable('sa-bookings', data||[]);
+  renderStats('sa-stats', data||[]);
+  document.getElementById('sa-blk-date').value=today;
+  renderBlockGrid('sa-blk-grid','sa-blk-date');
+  buildRevChart(data||[]);
+  buildCalendar(data||[]);
+}
+
+function renderAdminTable(containerId, bookings) {
+  const container=document.getElementById(containerId);
+  if(!bookings.length){container.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">No bookings yet.</div>';return;}
+  container.innerHTML=`<div style="overflow-x:auto"><table class="btable"><thead><tr><th>Name</th><th>Date</th><th>Time</th><th>Dur</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${bookings.map(b=>`<tr><td>${b.name}</td><td>${b.booking_date}</td><td>${b.time?b.time.slice(0,5):''}</td><td>${b.duration_minutes}m</td><td>৳${(b.amount||0).toLocaleString()}</td><td><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></td><td>
+      <button class="abtn wa" onclick="waConfirmBooking('${b.id}','${b.name}','${b.booking_date}','${b.time?b.time.slice(0,5):''}','${b.phone||''}')">✓ WA</button>
+      <button class="abtn" onclick="toggleStatus('${b.id}','${b.status}','${containerId}')">Toggle</button>
+      <button class="abtn del" onclick="delBooking('${b.id}','${containerId}')">Del</button>
+    </td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+function renderStats(cid, bookings) {
+  const c=document.getElementById(cid);if(!c)return;
+  const tdy=bookings.filter(b=>b.booking_date===today).length;
+  const rev=bookings.filter(b=>b.status==='confirmed').reduce((a,b)=>a+(b.amount||0),0);
+  const rate=Math.round(bookings.filter(b=>b.status==='confirmed').length/Math.max(bookings.length,1)*100);
+  c.innerHTML=`<div class="sc"><div class="sc-n">${bookings.length}</div><div class="sc-l">Total</div></div><div class="sc"><div class="sc-n">${tdy}</div><div class="sc-l">Today</div></div><div class="sc"><div class="sc-n">৳${rev.toLocaleString()}</div><div class="sc-l">Revenue</div></div><div class="sc"><div class="sc-n">${rate}%</div><div class="sc-l">Confirmed</div></div>`;
+}
+
+async function toggleStatus(id, currentStatus, tableId) {
+  const c=['pending','confirmed','cancelled'];
+  const newStatus=c[(c.indexOf(currentStatus)+1)%3];
+  await sb.from('bookings').update({status:newStatus}).eq('id',id);
+  if(tableId.startsWith('mgr')) loadAdminPanel();
+  else loadSaPanel();
+}
+
+async function delBooking(id, tableId) {
+  if(!confirm('Delete this booking?'))return;
+  await sb.from('bookings').delete().eq('id',id);
+  if(tableId.startsWith('mgr')) loadAdminPanel();
+  else loadSaPanel();
+}
+
+function waConfirmBooking(id, name, date, time, phone) {
+  if(!phone){alert('Phone number missing!');return;}
+  if(phone.startsWith('0')) phone='88'+phone;
+  const msg=`Dear ${name},\n\nYour booking is Confirmed! ✅\nDate: ${date}\nTime: ${time}\n\nPlease arrive 10 minutes early.\n\nSee you at El Clasico Football Arena! ⚽`;
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+async function mgrAddBook() {
+  const name=document.getElementById('m-name').value.trim();
+  const phone=document.getElementById('m-phone').value.trim();
+  const date=document.getElementById('m-date').value;
+  const time=document.getElementById('m-time').value;
+  if(!name||!phone||!date||!time){alert('Fill all fields!');return;}
+  const isFree=await isSlotFree(date,toMin(time),mgrDur);
+  if(!isFree){alert('Conflict! এই slot টি already booked।');return;}
+  const amt=calcAmt(time,mgrDur);
+  const {error}=await sb.from('bookings').insert({name,phone,booking_date:date,time:time+':00',duration_minutes:mgrDur,amount:amt,status:'confirmed'});
+  if(error){alert('Error: '+error.message);return;}
+  document.getElementById('m-smsg').textContent=`${name} — ${date} ${time} for ${mgrDur}min. ৳${amt.toLocaleString()}`;
+  document.getElementById('m-sbox').style.display='block';
+  loadAdminPanel();
+}
+
+// ============================================================
+// BLOCK SLOTS (local — can be extended to save to Supabase later)
+// ============================================================
+function renderBlockGrid(gid, did) {
+  const date=document.getElementById(did).value;
+  const g=document.getElementById(gid);
+  if(!g||!date)return;
+  g.innerHTML='';
+  const blk=blockedSlots[date]||[];
+  allSlots.forEach(t=>{
+    const h=parseInt(t);
+    const lbl=slotLbl(h);
+    const isBlocked=blk.includes(t);
+    const el=document.createElement('div');
+    el.className='blk-sl'+(isBlocked?' blocked':'');
+    el.innerHTML=lbl+`<span class="blkp">৳${getTimeRate(t).toLocaleString()}</span>`;
+    el.onclick=function(){
+      if(!blockedSlots[date])blockedSlots[date]=[];
+      const idx=blockedSlots[date].indexOf(t);
+      if(idx>-1)blockedSlots[date].splice(idx,1);else blockedSlots[date].push(t);
+      renderBlockGrid(gid,did);
+    };
+    g.appendChild(el);
+  });
+}
+
+function mgrTab(tab,el){
+  document.querySelectorAll('#mgr-panel .at').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  ['bookings','newbook','block'].forEach(t=>document.getElementById('mgr-'+t).style.display=t===tab?'block':'none');
+}
+function saTab(tab,el){
+  document.querySelectorAll('#sa-panel .at').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  ['bookings','revenue','calendar','block','pricing'].forEach(t=>document.getElementById('sa-'+t).style.display=t===tab?'block':'none');
+  if(tab==='revenue'){loadSaPanel();}
+  if(tab==='calendar'){loadSaPanel();}
+}
+
+// ============================================================
+// REVENUE CHART
+// ============================================================
+let revFilter_='week';
+function setRevFilter(f,el){revFilter_=f;document.querySelectorAll('.rf').forEach(r=>r.classList.remove('on'));el.classList.add('on');loadSaPanel();}
+
+function buildRevChart(bookings) {
+  const g=document.getElementById('rev-bars');if(!g)return;
+  const confirmed=bookings.filter(b=>b.status==='confirmed');
+  let labels,data;
+  if(revFilter_==='week'){
+    labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    // Group by day of week
+    data=[0,0,0,0,0,0,0];
+    confirmed.forEach(b=>{const d=new Date(b.booking_date);const dow=(d.getDay()+6)%7;data[dow]+=(b.amount||0);});
+  } else {
+    labels=['W1','W2','W3','W4'];
+    data=[0,0,0,0];
+    confirmed.forEach(b=>{const d=new Date(b.booking_date);const w=Math.floor((d.getDate()-1)/7);if(w<4)data[w]+=(b.amount||0);});
+  }
+  const mx=Math.max(...data,1);
+  const total=data.reduce((a,b)=>a+b,0);
+  g.innerHTML=data.map((v,i)=>`<div class="bar-col"><div class="bar-val">৳${Math.round(v/1000)}k</div><div class="bar" style="height:${Math.round(v/mx*110)}px"></div><div class="bar-lbl">${labels[i]}</div></div>`).join('');
+  document.getElementById('rev-total').textContent='৳'+total.toLocaleString();
+  document.getElementById('rev-avg').textContent='৳'+Math.round(total/Math.max(data.length,1)).toLocaleString();
+  document.getElementById('rev-bookings').textContent=confirmed.length;
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+function buildCalendar(bookings=[]) {
+  const g=document.getElementById('cal-grid');if(!g)return;
+  const mn=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent=mn[calMonth]+' '+calYear;
+  g.innerHTML='';
+  ['S','M','T','W','T','F','S'].forEach(d=>{const h=document.createElement('div');h.className='cal-dh';h.textContent=d;g.appendChild(h);});
+  const first=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  for(let i=0;i<first;i++){const e=document.createElement('div');e.className='cal-d empty';g.appendChild(e);}
+  const todayDate=new Date();
+  for(let d=1;d<=days;d++){
+    const el=document.createElement('div');
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const bkCount=bookings.filter(b=>b.booking_date===dateStr&&b.status==='confirmed').length;
+    const cls=bkCount===0?'avail':bkCount<3?'busy':'full';
+    el.className=`cal-d ${cls}`;
+    if(d===todayDate.getDate()&&calMonth===todayDate.getMonth()&&calYear===todayDate.getFullYear())el.classList.add('today');
+    el.textContent=d;el.title=`${bkCount} booking(s)`;
+    g.appendChild(el);
+  }
+}
+function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}loadSaPanel();}
+
+// ============================================================
+// PRICING
+// ============================================================
+function savePricing(){
+  basePrices.night=parseInt(document.getElementById('sp-night').value)||2500;
+  basePrices.early=parseInt(document.getElementById('sp-early').value)||1500;
+  basePrices.day=parseInt(document.getElementById('sp-day').value)||1200;
+  basePrices.eve=parseInt(document.getElementById('sp-eve').value)||1800;
+  buildSlots();updateTotal();updateMTotal();
+  const s=document.getElementById('price-saved');s.style.display='block';setTimeout(()=>s.style.display='none',2000);
+}
+
+// ============================================================
+// REVIEWS
+// ============================================================
+function renderReviews(){
+  const g=document.getElementById('review-grid');if(!g)return;
+  g.innerHTML=reviews.map(r=>`<div class="review-card"><div class="rev-top"><div class="rev-av">${r.name.charAt(0)}</div><div><div class="rev-name">${r.name}</div><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--gold);font-size:12px">${'★'.repeat(r.stars)}</span><span class="rev-time">${r.time}</span></div></div></div><div class="rev-text">${r.text}</div></div>`).join('');
+}
+function toggleReviewForm(){const f=document.getElementById('review-form');f.style.display=f.style.display==='block'?'none':'block';}
+function setStar(n){selStars=n;document.querySelectorAll('.sp').forEach((s,i)=>s.classList.toggle('on',i<n));}
+function submitReview(){
+  const name=document.getElementById('rev-name').value.trim();const text=document.getElementById('rev-text').value.trim();
+  if(!name||!text){alert('Name ও review দিন!');return;}
+  reviews.unshift({name,stars:selStars,text,time:'Just now'});
+  renderReviews();document.getElementById('review-form').style.display='none';
+  document.getElementById('rev-name').value='';document.getElementById('rev-text').value='';
+}
+
+// ============================================================
+// FAQ
+// ============================================================
+const faqs=[
+  {q:'Parking কি আছে?',a:'হ্যাঁ, বিনামূল্যে গাড়ি পার্কিং আছে। Motorcycle ও bike parking ও আছে।'},
+  {q:'Dress code কি?',a:'Proper football boots বা turf shoes পরা আবশ্যক।'},
+  {q:'বাথরুম ও changing room আছে?',a:'হ্যাঁ, পরিষ্কার changing room, locker, ও washroom সুবিধা আছে।'},
+  {q:'কি কি equipment পাওয়া যায়?',a:'Ball ও bibs ভাড়ায় পাওয়া যায়। Goalkeeper gloves on request।'},
+  {q:'Group booking কিভাবে করবো?',a:'৫+ জনের group এর জন্য WhatsApp করুন 01633-305811 — special rate পাবেন।'},
+  {q:'কিভাবে payment করবো?',a:'Booking এর সময় bKash/Nagad, অথবা সরাসরি cash on arrival।'},
+];
+function buildFAQ(){
+  const w=document.getElementById('faq-wrap');if(!w)return;
+  w.innerHTML=faqs.map((f,i)=>`<div class="faq-item"><div class="faq-q" onclick="toggleFAQ(${i})"><span>${f.q}</span><span class="faq-icon" id="fi-${i}">+</span></div><div class="faq-a" id="fa-${i}">${f.a}</div></div>`).join('');
+}
+function toggleFAQ(i){
+  const a=document.getElementById('fa-'+i),ic=document.getElementById('fi-'+i),isOpen=a.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(x=>x.classList.remove('open'));
+  document.querySelectorAll('.faq-icon').forEach(x=>{x.classList.remove('open');x.textContent='+';});
+  if(!isOpen){a.classList.add('open');ic.classList.add('open');}
+}
+
+// ============================================================
+// GALLERY / LIGHTBOX
+// ============================================================
+function openLightbox(emoji,caption){document.getElementById('lb-img').textContent=emoji;document.getElementById('lb-caption').textContent=caption;document.getElementById('lightbox').classList.add('open');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
+
+// ============================================================
+// NAV / THEME
+// ============================================================
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.nl').forEach(n=>n.classList.remove('active'));
+  setTimeout(()=>{const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('show');},20);
+  const nl=document.getElementById('nl-'+id);if(nl)nl.classList.add('active');
+  closeNav();window.scrollTo(0,0);
+}
+function toggleNav(){
+  const links=document.getElementById('nav-links');
+  const back=document.getElementById('nav-backdrop');
+  const open=links.classList.toggle('open');
+  if(back)back.classList.toggle('open',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function closeNav(){
+  const links=document.getElementById('nav-links');
+  const back=document.getElementById('nav-backdrop');
+  if(links)links.classList.remove('open');
+  if(back)back.classList.remove('open');
+  document.body.style.overflow='';
+}
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'':'light');
+  document.getElementById('theme-icon').textContent=isDark?'🌙':'☀️';
+}
+
+// ============================================================
+// AI CHAT
+// ============================================================
+const chatR={
+  avail:['EL Clasico is open 24/7! Go to the Book page to see live slot availability.','হ্যাঁ, সবসময় খোলা! Book page এ গিয়ে আপনার তারিখ দিন।'],
+  price:['Rates: 6AM–9AM ৳1500/hr, 9AM–3PM ৳1200/hr, 3PM–6PM ৳1800/hr, 6PM–6AM ৳2500/hr.','রেট: ভোর ৬-৯টা ৳১৫০০, সকাল ৯টা-বিকাল ৩টা ৳১২০০, বিকাল ৩-৬টা ৳১৮০০, রাত ৬টা-ভোর ৬টা ৳২৫০০।'],
+  cheap:['Cheapest: 9AM–3PM at ৳1200/hr!','সবচেয়ে কম: সকাল ৯টা-বিকাল ৩টা, মাত্র ৳১২০০/ঘণ্টা!'],
+  cancel:['Cancel 24+ hrs before = full refund. Within 24 hrs = no refund. WhatsApp: 01633-305811','২৪ ঘণ্টা আগে cancel = advance ফেরত। ২৪ ঘণ্টার মধ্যে cancel সম্ভব নয়।'],
+  parking:['Yes, free parking available!','হ্যাঁ, গাড়ি ও মোটরসাইকেলের জন্য বিনামূল্যে পার্কিং আছে!'],
+};
+function getAIReply(m){
+  const ml=m.toLowerCase();const bn=/[অ-ৱ]/.test(m)?1:0;
+  if(/avail|khali|free|open|slot|আছে|খালি/.test(ml))return chatR.avail[bn];
+  if(/price|cost|koto|taka|৳|daam|rate|দাম|কত|মূল্য/.test(ml))return chatR.price[bn];
+  if(/cheap|কম|সস্তা|lowest/.test(ml))return chatR.cheap[bn];
+  if(/cancel|refund|বাতিল/.test(ml))return chatR.cancel[bn];
+  if(/park|গাড়ি/.test(ml))return chatR.parking[bn];
+  return 'আরো সাহায্যের জন্য WhatsApp করুন: 01633-305811';
+}
+function askq(t){document.getElementById('cinp').value=t;sendMsg();}
+function sendMsg(){
+  const inp=document.getElementById('cinp');const t=inp.value.trim();if(!t)return;
+  const mc=document.getElementById('msgs');
+  const um=document.createElement('div');um.className='msg u';um.textContent=t;mc.appendChild(um);
+  inp.value='';mc.scrollTop=mc.scrollHeight;
+  const ld=document.createElement('div');ld.className='msg b';ld.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';mc.appendChild(ld);
+  setTimeout(()=>{ld.textContent=getAIReply(t);mc.scrollTop=mc.scrollHeight;},850);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('b-date').value=today;
+buildSlots();
+renderReviews();
+buildFAQ();
+setStar(5);
+initAuth();
+</script>
+</body></html>
