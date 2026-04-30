@@ -415,8 +415,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
     <div class="nl" id="nl-pricing" onclick="goPage('pricing')">Pricing</div>
     <div class="nl" id="nl-info" onclick="goPage('info')">Info</div>
     <div class="nl" id="nl-chat" onclick="goPage('chat')">AI Chat</div>
-    <div class="nl" id="nl-manager" onclick="goPage('manager')">Manager</div>
-    <div class="nl" id="nl-sadmin" onclick="goPage('sadmin')">Super Admin</div>
+
   </div>
   <div class="nav-right">
     <button class="theme-btn" onclick="toggleTheme()" id="theme-icon">🌙</button>
@@ -1332,5 +1331,17 @@ renderReviews();
 buildFAQ();
 setStar(5);
 initAuth();
+
+// Secret URL detection
+function checkSecretHash() {
+  const hash = window.location.hash;
+  if (hash === '#manager-login') {
+    goPage('manager');
+  } else if (hash === '#elclasico-admin') {
+    goPage('sadmin');
+  }
+}
+checkSecretHash();
+window.addEventListener('hashchange', checkSecretHash);
 </script>
 </body></html>
