@@ -3,6 +3,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EL Clasico Football Arena — Noakhali</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -408,7 +410,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
   <button class="hamburger" id="hamburger" onclick="toggleNav()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
   </button>
-  <div class="logo" onclick="goPage('home')">EL <b>CLASICO</b></div>
+  <div class="logo" onclick="goPage('home')" style="display:flex;align-items:center;gap:8px"><img src="logo.png" style="width:36px;height:36px;border-radius:50%;object-fit:cover">EL <b>CLASICO</b></div>
   <div class="nav-links" id="nav-links">
     <div class="nl active" id="nl-home" onclick="goPage('home')">Home</div>
     <div class="nl" id="nl-book" onclick="goPage('book')">Book</div>
@@ -592,8 +594,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
     <div class="price-sections">
       <div class="ps"><div class="ps-head"><h3>Daytime — cheapest</h3><span class="ps-time">9:00 AM – 3:00 PM</span></div><div class="ps-price">৳1200<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
       <div class="ps"><div class="ps-head"><h3>Early morning</h3><span class="ps-time">6:00 AM – 9:00 AM</span></div><div class="ps-price">৳1500<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
-      <div class="ps"><div class="ps-head"><h3>Afternoon</h3><span class="ps-time">3:00 PM – 6:00 PM</span></div><div class="ps-price">৳1800<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water + snacks</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
-      <div class="ps"><div class="ps-head"><h3>Night peak</h3><span class="ps-time">6:00 PM – 6:00 AM</span></div><div class="ps-price">৳2500<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Full floodlights</li><li>Changing room</li><li>Water + snacks</li><li>Priority booking</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+      <div class="ps"><div class="ps-head"><h3>Afternoon</h3><span class="ps-time">3:00 PM – 6:00 PM</span></div><div class="ps-price">৳1800<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
+      <div class="ps"><div class="ps-head"><h3>Night peak</h3><span class="ps-time">6:00 PM – 6:00 AM</span></div><div class="ps-price">৳2500<span>/hr</span></div><ul class="ps-features"><li>Full turf access</li><li>Full floodlights</li><li>Changing room</li><li>Free water</li></ul><button class="ps-book" onclick="goPage('book')">Book now</button></div>
     </div>
   </div>
 </div>
