@@ -971,37 +971,87 @@ async function buildSlots() {
   const g = document.getElementById('sgrid'); if(!g) return;
   const dv = document.getElementById('b-date').value; if(!dv){ updateTotal(); return; }
   g.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Checking availability...</div>';
+
   const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
   const currentTime = document.getElementById('b-time').value;
   const bookedRanges = await getBookedRanges(dv);
   const blockedRanges = getBlockedRanges(dv);
-  const taken = bookedRanges.concat(blockedRanges);
+  const taken = bookedRanges.concat(blockedRanges).sort((a,b)=>a.start-b.start);
+
+  // Price zones for this day (in display order)
+  // Zone N: 0–360 (midnight to 6AM, continuation from prev day's 6PM)
+  // Zone M: 360–540 (6AM–9AM)
+  // Zone D: 540–900 (9AM–3PM)
+  // Zone A: 900–1080 (3PM–6PM)
+  // Zone N2: 1080–1440 (6PM–midnight, continues to next day 6AM)
+  const zones = [
+    {name:'Night',    start:0,    end:360,  price:basePrices.night},
+    {name:'Morning',  start:360,  end:540,  price:basePrices.early},
+    {name:'Daytime',  start:540,  end:900,  price:basePrices.day},
+    {name:'Afternoon',start:900,  end:1080, price:basePrices.eve},
+    {name:'Night',    start:1080, end:1440, price:basePrices.night},
+  ];
+
   g.innerHTML = '';
-  for(let h=0; h<24; h++) {
-    const tStr = String(h).padStart(2,'0') + ':00';
-    const sMin = h*60, eMin = sMin+selDur;
-    const lbl = fmtTime(tStr+':00');
-    const el = document.createElement('div');
-    const isPast = isToday && sMin < nowMin;
-    const isBooked = taken.some(t => rangesOverlap(sMin, eMin, t.start, t.end));
-    const overflow = eMin > 1440;
-    if(isPast) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>'; }
-    else if(overflow||isBooked) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">'+(isBooked?'Booked':'N/A')+'</span>'; }
-    else {
-      const bEndLbl = fmtTime(fromMin(eMin));
-      const amt = calcAmt(tStr, selDur);
-      el.className = 'sl ok';
-      el.innerHTML = lbl + `<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
-      if(tStr===currentTime) el.classList.add('sel');
-      el.onclick = function() {
-        document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
-        el.classList.add('sel');
-        document.getElementById('b-time').value = tStr;
-        updateTotal();
-      };
+  let hasAny = false;
+
+  zones.forEach(zone => {
+    let pointer = zone.start;
+    const zoneSlots = [];
+
+    while(pointer + selDur <= zone.end) {
+      const sMin = pointer;
+      const eMin = pointer + selDur;
+      const tStr = fromMin(sMin);
+      const isPast = isToday && sMin < nowMin;
+      const blocking = taken.find(t => rangesOverlap(sMin, eMin, t.start, t.end));
+
+      if(blocking) {
+        // Skip past the blocking booking
+        pointer = blocking.end;
+        continue;
+      }
+
+      zoneSlots.push({sMin, eMin, tStr, isPast});
+      pointer += selDur;
     }
-    g.appendChild(el);
+
+    if(zoneSlots.length === 0) return;
+    hasAny = true;
+
+    // Zone header
+    const zh = document.createElement('div');
+    zh.style.cssText = 'font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 0 4px;grid-column:1/-1;border-top:1px solid var(--bdr);margin-top:4px';
+    zh.textContent = `${zone.name} — ৳${zone.price.toLocaleString()}/hr`;
+    g.appendChild(zh);
+
+    zoneSlots.forEach(({sMin, eMin, tStr, isPast}) => {
+      const lbl = fmtTime(tStr+':00');
+      const el = document.createElement('div');
+      if(isPast) {
+        el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>';
+      } else {
+        const bEndLbl = fmtTime(fromMin(eMin));
+        const ov = priceOverrides.find(o=>o.time===tStr&&o.dur===selDur);
+        const amt = ov ? ov.price : Math.round(zone.price*(selDur/60));
+        el.className='sl ok';
+        el.innerHTML=lbl+`<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
+        if(tStr===currentTime) el.classList.add('sel');
+        el.onclick=function(){
+          document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
+          el.classList.add('sel');
+          document.getElementById('b-time').value=tStr;
+          updateTotal();
+        };
+      }
+      g.appendChild(el);
+    });
+  });
+
+  if(!hasAny) {
+    g.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px;grid-column:1/-1">এই দিনে কোনো slot পাওয়া যাচ্ছে না।</div>';
   }
+
   updateTotal();
 }
 
