@@ -71,7 +71,22 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
 
 /* PRICE BANNER */
 .price-banner{background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin:1.2rem;overflow:hidden;transition:background var(--tr)}
-.pb-title{padding:.65rem 1rem;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr)}
+.live-slots-block{margin:1rem 1.2rem;border-radius:14px;border:1px solid var(--bdr);overflow:hidden;background:var(--card)}
+.live-slots-header{padding:.8rem 1rem;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.live-slots-title{font-size:13px;font-weight:600;color:var(--txt)}
+.next-game-timer{font-size:11px;color:var(--g2);font-weight:500;letter-spacing:.3px}
+.live-date-tabs{display:flex;gap:6px;padding:.7rem 1rem;border-bottom:1px solid var(--bdr)}
+.live-date-tab{padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--bdr);color:var(--muted);transition:.2s}
+.live-date-tab.on{background:var(--g2);color:#000;border-color:var(--g2);font-weight:600}
+.live-slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;padding:.8rem 1rem}
+.ls{border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer;border:1px solid var(--bdr);transition:.2s;font-size:11px}
+.ls.avail{background:rgba(0,200,83,0.08);border-color:rgba(0,200,83,0.3);color:var(--txt)}
+.ls.avail:hover{background:rgba(0,200,83,0.18);transform:translateY(-1px)}
+.ls.booked{background:rgba(255,255,255,0.03);border-color:var(--bdr);color:var(--muted);cursor:default;opacity:.55}
+.ls-time{font-weight:600;font-size:12px;margin-bottom:2px}
+.ls-status{font-size:9px;text-transform:uppercase;letter-spacing:.5px}
+.ls.avail .ls-status{color:var(--g2)}
+.ls.booked .ls-status{color:var(--muted)}
 .pb-grid{display:grid;grid-template-columns:repeat(4,1fr)}
 .pb-item{padding:.8rem .5rem;text-align:center;border-right:1px solid var(--bdr)}
 .pb-item:last-child{border:none}
@@ -475,6 +490,21 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
       <div class="pb-item"><div class="pb-time">9 AM – 3 PM</div><div class="pb-price">৳1200</div><span class="pb-tag tag-day">Daytime</span></div>
       <div class="pb-item"><div class="pb-time">3 PM – 6 PM</div><div class="pb-price">৳1800</div><span class="pb-tag tag-eve">Evening</span></div>
       <div class="pb-item"><div class="pb-time">6 PM – 6 AM</div><div class="pb-price">৳2500</div><span class="pb-tag tag-night">Night peak</span></div>
+    </div>
+  </div>
+
+  <!-- LIVE SLOTS BLOCK -->
+  <div class="live-slots-block">
+    <div class="live-slots-header">
+      <div class="live-slots-title">⚡ Live slot availability</div>
+      <div class="next-game-timer" id="next-game-timer">Loading...</div>
+    </div>
+    <div class="live-date-tabs">
+      <div class="live-date-tab on" id="tab-today" onclick="switchLiveTab(0,this)">আজ</div>
+      <div class="live-date-tab" id="tab-tomorrow" onclick="switchLiveTab(1,this)">আগামীকাল</div>
+    </div>
+    <div class="live-slots-grid" id="live-slots-grid">
+      <div style="color:var(--muted);font-size:12px;padding:8px;grid-column:1/-1"><span class="spin"></span> Loading...</div>
     </div>
   </div>
 
@@ -1394,9 +1424,8 @@ function toggleTheme(){
 }
 
 // ============================================================
-// AI CHAT — Gemini via Supabase Edge Function
+// AI CHAT — Preset answers + live slot check
 // ============================================================
-const EDGE_URL = 'https://ndzhkclijmnjqslkupdj.supabase.co/functions/v1/ai-chat';
 let chatHistory = [];
 
 function askq(t){document.getElementById('cinp').value=t;sendMsg();}
@@ -1407,50 +1436,181 @@ async function sendMsg(){
   if(!t)return;
   const mc=document.getElementById('msgs');
 
-  // User message
   const um=document.createElement('div');
-  um.className='msg u';
-  um.textContent=t;
-  mc.appendChild(um);
-  inp.value='';
-  mc.scrollTop=mc.scrollHeight;
+  um.className='msg u';um.textContent=t;mc.appendChild(um);
+  inp.value='';mc.scrollTop=mc.scrollHeight;
 
-  // Loading dots
   const ld=document.createElement('div');
   ld.className='msg b';
   ld.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-  mc.appendChild(ld);
-  mc.scrollTop=mc.scrollHeight;
+  mc.appendChild(ld);mc.scrollTop=mc.scrollHeight;
 
-  try {
-    const res = await fetch(EDGE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kemhrY2xpam1uanFzbGt1cGRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODMzMzYsImV4cCI6MjA5MzE1OTMzNn0.q8y2X7IIuGa0vAzGdJg_Mp8JiYGRcCycR8ot8jNQYak'
-      },
-      body: JSON.stringify({ message: t, history: chatHistory })
-    });
-    const data = await res.json();
-    const reply = data.reply || 'দুঃখিত, এখন উত্তর দিতে পারছি না।';
-    ld.textContent = reply;
-    chatHistory.push({ role:'user', content:t });
-    chatHistory.push({ role:'assistant', content:reply });
-    // Keep history max 10 messages
-    if(chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
-  } catch(e) {
-    ld.textContent = 'Connection error। WhatsApp করুন: 01633-305811';
+  const reply = await getReply(t);
+  setTimeout(()=>{ld.textContent=reply;mc.scrollTop=mc.scrollHeight;},600);
+}
+
+async function getReply(m){
+  const ml=m.toLowerCase();
+  const bn=/[অ-ৱ]/.test(m)?1:0;
+
+  // Check slot availability — e.g. "8 tarikhe 7 tay khali ache?"
+  const dateMatch = ml.match(/(\d{1,2})\s*(ta|তা|tarik|তারিখ|\/|-)/);
+  const timeMatch = ml.match(/(\d{1,2})\s*(ta|টা|pm|am|:)/);
+  const availKeyword = /khali|available|avail|ache|আছে|খালি|বুক|book/.test(ml);
+
+  if(availKeyword && dateMatch && timeMatch){
+    const day = parseInt(dateMatch[1]);
+    const hour = parseInt(timeMatch[1]);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const checkDate = new Date(year, month, day);
+    const dateStr = checkDate.toISOString().split('T')[0];
+    const timeStr = String(hour).padStart(2,'0')+':00:00';
+
+    const {data} = await sb.from('bookings')
+      .select('id')
+      .eq('booking_date', dateStr)
+      .eq('time', timeStr)
+      .neq('status','cancelled');
+
+    const friendly = fmtTime(String(hour).padStart(2,'0')+':00');
+    if(data && data.length>0){
+      return bn
+        ? `${day} তারিখ ${friendly} এ slot টি বুক হয়ে গেছে। অন্য সময় দেখতে Book page এ যান।`
+        : `${day}th at ${friendly} is already booked. Please check Book page for other slots.`;
+    } else {
+      return bn
+        ? `হ্যাঁ, ${day} তারিখ ${friendly} এ slot খালি আছে! Book page থেকে এখনই বুক করুন।`
+        : `Yes, ${day}th at ${friendly} is available! Go to Book page to confirm.`;
+    }
   }
-  mc.scrollTop=mc.scrollHeight;
+
+  // Preset answers
+  if(/avail|khali|free|open|slot|আছে|খালি/.test(ml))
+    return bn?'Book page এ গিয়ে তারিখ দিলে সব খালি slot দেখতে পাবেন!':'Go to the Book page and select your date to see available slots!';
+  if(/price|cost|koto|taka|৳|daam|rate|দাম|কত|মূল্য/.test(ml))
+    return bn?'রেট: ভোর ৬-৯টা ৳১৫০০, সকাল ৯টা-বিকাল ৩টা ৳১২০০, বিকাল ৩-৬টা ৳১৮০০, সন্ধ্যা ৬টা-ভোর ৬টা ৳২৫০০/ঘণ্টা।':'Rates: 6–9AM ৳1500, 9AM–3PM ৳1200, 3–6PM ৳1800, 6PM–6AM ৳2500 per hour.';
+  if(/cheap|সস্তা|কম|lowest/.test(ml))
+    return bn?'সবচেয়ে কম: সকাল ৯টা-বিকাল ৩টা, মাত্র ৳১২০০/ঘণ্টা!':'Cheapest: 9AM–3PM at ৳1200/hr!';
+  if(/cancel|refund|বাতিল/.test(ml))
+    return bn?'২৪ ঘণ্টা আগে cancel করলে advance ফেরত পাবেন। ২৪ ঘণ্টার মধ্যে cancel সম্ভব নয়।':'Cancel 24+ hrs before = full refund. Within 24 hrs = no refund.';
+  if(/park|গাড়ি|পার্কিং/.test(ml))
+    return bn?'হ্যাঁ, গাড়ি ও মোটরসাইকেলের জন্য বিনামূল্যে পার্কিং আছে!':'Yes, free parking for cars and motorcycles!';
+  if(/bathroom|changing|locker|washroom|বাথরুম/.test(ml))
+    return bn?'হ্যাঁ, পরিষ্কার changing room ও washroom আছে।':'Yes, clean changing room and washroom available.';
+  if(/equipment|ball|glove|গ্লাভস/.test(ml))
+    return bn?'Football ও Goalkeeper gloves পাওয়া যায়।':'Football and Goalkeeper gloves are available.';
+  if(/payment|bkash|বিকাশ|pay/.test(ml))
+    return bn?'Booking এর সময় bKash এ advance ৳৫০০ দিতে হবে।':'Advance ৳500 via bKash at the time of booking.';
+  if(/location|কোথায়|address|ঠিকানা/.test(ml))
+    return bn?'আমরা Noakhali, Bangladesh এ অবস্থিত। যোগাযোগ: 01633-305811':'Located in Noakhali, Bangladesh. Contact: 01633-305811';
+  if(/contact|phone|number|whatsapp|ফোন/.test(ml))
+    return bn?'WhatsApp/Call: 01633-305811':'WhatsApp/Call: 01633-305811';
+  if(/time|hours|open|khenke|খোলা|সময়/.test(ml))
+    return bn?'আমরা ২৪ ঘণ্টা, সপ্তাহে ৭ দিন খোলা!':'We are open 24/7, 7 days a week!';
+
+  return bn
+    ? 'আরো তথ্যের জন্য WhatsApp করুন: 01633-305811'
+    : 'For more info, WhatsApp us: 01633-305811';
 }
 
 // ============================================================
 // INIT
 // ============================================================
-document.getElementById('b-date').value=today;
+// ============================================================
+// LIVE SLOTS BLOCK
+// ============================================================
+let liveTabOffset = 0;
+let liveBookedTimes = [];
+let nextGameInterval = null;
+
+async function loadLiveSlots(dayOffset){
+  const grid = document.getElementById('live-slots-grid');
+  if(!grid) return;
+  grid.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px;grid-column:1/-1"><span class="spin"></span> Loading...</div>';
+
+  const d = new Date();
+  d.setDate(d.getDate() + dayOffset);
+  const dateStr = d.toISOString().split('T')[0];
+
+  const {data} = await sb.from('bookings')
+    .select('time,duration_minutes')
+    .eq('booking_date', dateStr)
+    .neq('status','cancelled');
+
+  liveBookedTimes = (data||[]).map(b=>b.time?b.time.slice(0,5):'');
+
+  // Build all 24 slots (hourly)
+  let html = '';
+  const now = new Date();
+  let nextBookedMs = null;
+
+  for(let h=0;h<24;h++){
+    const timeKey = String(h).padStart(2,'0')+':00';
+    const isBooked = liveBookedTimes.includes(timeKey);
+    const label = fmtTime(timeKey+':00');
+
+    // Check if this slot is in the past (today only)
+    const slotDate = new Date(d);
+    slotDate.setHours(h,0,0,0);
+    const isPast = dayOffset===0 && slotDate < now;
+
+    if(isPast){
+      html+=`<div class="ls booked"><div class="ls-time">${label}</div><div class="ls-status">Past</div></div>`;
+    } else if(isBooked){
+      // Track next booked slot for timer
+      if(!nextBookedMs || slotDate.getTime() < nextBookedMs) nextBookedMs = slotDate.getTime();
+      html+=`<div class="ls booked"><div class="ls-time">${label}</div><div class="ls-status">Booked</div></div>`;
+    } else {
+      html+=`<div class="ls avail" onclick="goBookSlot('${dateStr}','${timeKey}')"><div class="ls-time">${label}</div><div class="ls-status">Available</div></div>`;
+    }
+  }
+  grid.innerHTML = html;
+
+  // Start timer for next booked slot
+  if(nextGameInterval) clearInterval(nextGameInterval);
+  if(nextBookedMs){
+    updateNextGameTimer(nextBookedMs);
+    nextGameInterval = setInterval(()=>updateNextGameTimer(nextBookedMs), 1000);
+  } else {
+    document.getElementById('next-game-timer').textContent = 'No upcoming bookings';
+  }
+}
+
+function updateNextGameTimer(targetMs){
+  const el = document.getElementById('next-game-timer');
+  if(!el) return;
+  const diff = targetMs - Date.now();
+  if(diff <= 0){el.textContent='Next game starting now!';return;}
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  el.textContent=`⏱ Next game in: ${h>0?h+'h ':''} ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+}
+
+function switchLiveTab(offset, el){
+  liveTabOffset = offset;
+  document.querySelectorAll('.live-date-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  loadLiveSlots(offset);
+}
+
+function goBookSlot(date, time){
+  // Go to book page and pre-fill date
+  goPage('book');
+  setTimeout(()=>{
+    const dateInput = document.getElementById('b-date');
+    if(dateInput) dateInput.value = date;
+    buildSlots();
+    // Scroll to slots
+    document.getElementById('page-book').scrollTop = 0;
+  }, 100);
+}
 buildSlots();
 loadReviews();
 loadGallery();
+loadLiveSlots(0);
 buildFAQ();
 setStar(5);
 initAuth();
