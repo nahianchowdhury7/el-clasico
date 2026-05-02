@@ -593,7 +593,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
     <div class="total-b"><span>Total for <span id="dur-label">1 hour</span></span><strong id="total-amt">৳2,500</strong></div>
     <button class="cbtn" onclick="confirmBook()" id="confirm-btn">Confirm booking</button>
     <div class="sbox" id="sbox">
-      <h3>Booking confirmed! ✅</h3>
+      <h3>Booking received! ⏳</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Admin confirm করলে WhatsApp এ notification পাবেন।</p>
       <p id="smsg"></p>
       <div class="wa-confirm"><a href="https://wa.me/8801633305811" target="_blank">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="#69f0ae"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
@@ -925,13 +926,43 @@ function getTimeRate(t){const h=parseInt(t);if(h>=18||h<6)return basePrices.nigh
 function calcAmt(t,dur){const ov=priceOverrides.find(o=>o.time===t&&o.dur===dur);return ov?ov.price:Math.round(getTimeRate(t)*(dur/60));}
 function slotLbl(h){return h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM';}
 
-// Load bookings for a date from Supabase
+// Load bookings for a date from Supabase — includes previous day overflow
 async function getBookedRanges(date) {
-  const { data } = await sb.from('bookings')
+  // Current date bookings
+  const { data: d1 } = await sb.from('bookings')
     .select('time, duration_minutes')
     .eq('booking_date', date)
     .neq('status', 'cancelled');
-  return (data||[]).map(b => { const s=toMin(b.time.slice(0,5)); return {start:s, end:s+(b.duration_minutes||60)}; });
+
+  // Previous date bookings (for midnight overflow)
+  const prevDate = new Date(date);
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateStr = prevDate.toISOString().split('T')[0];
+  const { data: d2 } = await sb.from('bookings')
+    .select('time, duration_minutes')
+    .eq('booking_date', prevDateStr)
+    .neq('status', 'cancelled');
+
+  const ranges = [];
+
+  // Current day ranges
+  (d1||[]).forEach(b => {
+    const s = toMin(b.time.slice(0,5));
+    const e = s + (b.duration_minutes||60);
+    ranges.push({start:s, end:e});
+  });
+
+  // Previous day overflow into current day (past midnight)
+  (d2||[]).forEach(b => {
+    const s = toMin(b.time.slice(0,5));
+    const e = s + (b.duration_minutes||60);
+    if(e > 1440) {
+      // This booking overflows into current day
+      ranges.push({start: 0, end: e - 1440});
+    }
+  });
+
+  return ranges;
 }
 
 function getBlockedRanges(date) {
@@ -949,28 +980,69 @@ async function buildSlots() {
   const g = document.getElementById('sgrid'); if(!g) return;
   const dv = document.getElementById('b-date').value; if(!dv){ updateTotal(); return; }
   g.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Checking availability...</div>';
-  const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
+
+  const now = new Date();
+  const isToday = dv === today;
+  const nowMin = now.getHours()*60 + now.getMinutes();
   const currentTime = document.getElementById('b-time').value;
+
   const bookedRanges = await getBookedRanges(dv);
   const blockedRanges = getBlockedRanges(dv);
   const taken = bookedRanges.concat(blockedRanges);
+
+  // Sort taken ranges by start time
+  taken.sort((a,b) => a.start - b.start);
+
+  // Build dynamic slots:
+  // Slots start either at 0 (midnight) or right after a booking ends
+  // 6AM (360 min) resets to fixed hourly for new price tier
+  // Slots only go up to midnight (1440)
+
+  const RESET_POINTS = [360]; // 6AM resets
+  const slotStarts = new Set();
+
+  // Always add 0 (midnight start)
+  slotStarts.add(0);
+
+  // Add reset points
+  RESET_POINTS.forEach(r => slotStarts.add(r));
+
+  // Add end times of each booking as new slot start points
+  taken.forEach(t => {
+    const endMin = t.end % 1440; // wrap midnight
+    if(endMin > 0) slotStarts.add(endMin);
+    // Also add reset points after each booking end
+    RESET_POINTS.forEach(r => {
+      if(r > t.end % 1440) slotStarts.add(r);
+    });
+  });
+
+  // Convert to sorted array, filter out past midnight
+  let starts = Array.from(slotStarts).filter(s => s >= 0 && s < 1440).sort((a,b)=>a-b);
+
   g.innerHTML = '';
-  for(let h=0; h<24; h++) {
-    const tStr = String(h).padStart(2,'0') + ':00';
-    const sMin = h*60, eMin = sMin+selDur;
-    const lbl = fmtTime(tStr);
+
+  starts.forEach(sMin => {
+    const eMin = sMin + selDur;
+    if(eMin > 1440) return; // skip overflow slots
+
+    const tStr = String(Math.floor(sMin/60)).padStart(2,'0') + ':' + String(sMin%60).padStart(2,'0');
+    const lbl = fmtTime(tStr+':00');
     const el = document.createElement('div');
+
     const isPast = isToday && sMin < nowMin;
     const isBooked = taken.some(t => rangesOverlap(sMin, eMin, t.start, t.end));
-    const overflow = eMin > 1440;
-    if(isPast) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>'; }
-    else if(overflow||isBooked) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">'+(isBooked?'Booked':'N/A')+'</span>'; }
-    else {
+
+    if(isPast) {
+      el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>';
+    } else if(isBooked) {
+      el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Booked</span>';
+    } else {
       const bEndLbl = fmtTime(fromMin(eMin));
       const amt = calcAmt(tStr, selDur);
       el.className = 'sl ok';
       el.innerHTML = lbl + `<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
-      if(tStr===currentTime) el.classList.add('sel');
+      if(tStr === currentTime) el.classList.add('sel');
       el.onclick = function() {
         document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
         el.classList.add('sel');
@@ -979,7 +1051,8 @@ async function buildSlots() {
       };
     }
     g.appendChild(el);
-  }
+  });
+
   updateTotal();
 }
 
@@ -1014,8 +1087,7 @@ async function confirmBook() {
     time:time+':00',
     duration_minutes:selDur,
     amount:amt,
-    status:'confirmed',
-    bkash_trxid:bkash||null,
+    status:'pending',
     note:note||null,
   };
   if(currentUser) bookingData.user_id=currentUser.id;
@@ -1103,9 +1175,9 @@ async function loadSaPanel() {
 function renderAdminTable(containerId, bookings) {
   const container=document.getElementById(containerId);
   if(!bookings.length){container.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">No bookings yet.</div>';return;}
-  container.innerHTML=`<div style="overflow-x:auto"><table class="btable"><thead><tr><th>Name</th><th>Date</th><th>Time</th><th>Dur</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-    ${bookings.map(b=>`<tr><td>${b.name}</td><td>${b.booking_date}</td><td>${b.time?fmtTime(b.time.slice(0,5)):''}</td><td>${b.duration_minutes}m</td><td>৳${(b.amount||0).toLocaleString()}</td><td><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></td><td>
-      <button class="abtn wa" onclick="waConfirmBooking('${b.id}','${b.name}','${b.booking_date}','${b.time?b.time.slice(0,5):''}','${b.phone||''}')">✓ WA</button>
+  container.innerHTML=`<div style="overflow-x:auto"><table class="btable"><thead><tr><th>Name</th><th>Date</th><th>Time</th><th>Dur</th><th>Amount</th><th>bKash TrxID</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${bookings.map(b=>`<tr><td>${b.name}</td><td>${b.booking_date}</td><td>${b.time?fmtTime(b.time.slice(0,5)):''}</td><td>${b.duration_minutes}m</td><td>৳${(b.amount||0).toLocaleString()}</td><td style="font-size:11px;color:var(--g2)">${b.bkash_trxid||'—'}</td><td><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></td><td>
+      <button class="abtn wa" onclick="waConfirmBooking('${b.id}','${b.name}','${b.booking_date}','${b.time?b.time.slice(0,5):''}','${b.phone||''}','${b.duration_minutes||60}')">✓ WA</button>
       <button class="abtn" onclick="toggleStatus('${b.id}','${b.status}','${containerId}')">Toggle</button>
       <button class="abtn del" onclick="delBooking('${b.id}','${containerId}')">Del</button>
     </td></tr>`).join('')}
@@ -1121,8 +1193,8 @@ function renderStats(cid, bookings) {
 }
 
 async function toggleStatus(id, currentStatus, tableId) {
-  const c=['pending','confirmed','cancelled'];
-  const newStatus=c[(c.indexOf(currentStatus)+1)%3];
+  // Toggle: pending→cancelled, confirmed→cancelled, cancelled→pending
+  const newStatus = currentStatus==='cancelled' ? 'pending' : 'cancelled';
   await sb.from('bookings').update({status:newStatus}).eq('id',id);
   if(tableId.startsWith('mgr')) loadAdminPanel();
   else loadSaPanel();
@@ -1135,12 +1207,18 @@ async function delBooking(id, tableId) {
   else loadSaPanel();
 }
 
-function waConfirmBooking(id, name, date, time, phone) {
+async function waConfirmBooking(id, name, date, time, phone, duration) {
   if(!phone){alert('Phone number missing!');return;}
+  // Update status to confirmed in Supabase
+  await sb.from('bookings').update({status:'confirmed'}).eq('id',id);
+  // Send WA message
   if(phone.startsWith('0')) phone='88'+phone;
   const friendlyTime = fmtTime(time);
-  const msg=`Dear ${name},\n\nYour booking is Confirmed! ✅\nDate: ${date}\nTime: ${friendlyTime}\n\nPlease arrive 10 minutes early.\n\nSee you at El Clasico Football Arena! ⚽`;
+  const dur = duration ? (duration>=60 ? Math.floor(duration/60)+'h'+(duration%60?(' '+duration%60+'min'):'') : duration+'min') : '';
+  const msg=`Dear ${name},\n\nআপনার booking Confirmed! ✅\nDate: ${date}\nTime: ${friendlyTime}\nDuration: ${dur}\n\n১০ মিনিট আগে চলে আসবেন।\n\nSee you at El Clasico Football Arena! ⚽`;
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+  // Reload the table
+  setTimeout(()=>loadMgrPanel(),500);
 }
 
 async function mgrAddBook() {
