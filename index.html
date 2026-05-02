@@ -1425,7 +1425,10 @@ async function sendMsg(){
   try {
     const res = await fetch(EDGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kemhrY2xpam1uanFzbGt1cGRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1ODMzMzYsImV4cCI6MjA5MzE1OTMzNn0.q8y2X7IIuGa0vAzGdJg_Mp8JiYGRcCycR8ot8jNQYak'
+      },
       body: JSON.stringify({ message: t, history: chatHistory })
     });
     const data = await res.json();
