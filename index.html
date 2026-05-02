@@ -1486,17 +1486,28 @@ async function getReply(m){
     }
   }
 
-  // Preset answers
-  if(/avail|khali|free|open|slot|আছে|খালি/.test(ml))
-    return bn?'Book page এ গিয়ে তারিখ দিলে সব খালি slot দেখতে পাবেন!':'Go to the Book page and select your date to see available slots!';
+  // Preset answers — parking FIRST before avail check (to avoid "ache" false match)
+  if(/parking|পার্কিং|গাড়ি/.test(ml))
+    return bn?'হ্যাঁ, গাড়ি ও মোটরসাইকেলের জন্য বিনামূল্যে পার্কিং আছে!':'Yes, free parking available for cars and motorcycles!';
+
+  if(/avail|khali|free|open|slot|আছে|খালি|available now|right now|ekhon|এখন/.test(ml)){
+    // Check current real-time availability
+    const nowDate = new Date().toISOString().split('T')[0];
+    const nowHour = new Date().getHours();
+    const nowTime = String(nowHour).padStart(2,'0')+':00:00';
+    const {data} = await sb.from('bookings').select('id').eq('booking_date',nowDate).eq('time',nowTime).neq('status','cancelled');
+    const currentLabel = fmtTime(String(nowHour).padStart(2,'0')+':00');
+    if(data && data.length>0)
+      return bn?`এখন (${currentLabel}) slot টি বুক হয়ে আছে। অন্য সময় দেখতে Book page এ যান।`:`Right now (${currentLabel}) is booked. Check the Book page for other slots.`;
+    else
+      return bn?`হ্যাঁ! এখন (${currentLabel}) slot খালি আছে। এখনই বুক করুন!`:`Yes! The current slot (${currentLabel}) is available. Book it now!`;
+  }
   if(/price|cost|koto|taka|৳|daam|rate|দাম|কত|মূল্য/.test(ml))
     return bn?'রেট: ভোর ৬-৯টা ৳১৫০০, সকাল ৯টা-বিকাল ৩টা ৳১২০০, বিকাল ৩-৬টা ৳১৮০০, সন্ধ্যা ৬টা-ভোর ৬টা ৳২৫০০/ঘণ্টা।':'Rates: 6–9AM ৳1500, 9AM–3PM ৳1200, 3–6PM ৳1800, 6PM–6AM ৳2500 per hour.';
   if(/cheap|সস্তা|কম|lowest/.test(ml))
     return bn?'সবচেয়ে কম: সকাল ৯টা-বিকাল ৩টা, মাত্র ৳১২০০/ঘণ্টা!':'Cheapest: 9AM–3PM at ৳1200/hr!';
   if(/cancel|refund|বাতিল/.test(ml))
     return bn?'২৪ ঘণ্টা আগে cancel করলে advance ফেরত পাবেন। ২৪ ঘণ্টার মধ্যে cancel সম্ভব নয়।':'Cancel 24+ hrs before = full refund. Within 24 hrs = no refund.';
-  if(/park|গাড়ি|পার্কিং/.test(ml))
-    return bn?'হ্যাঁ, গাড়ি ও মোটরসাইকেলের জন্য বিনামূল্যে পার্কিং আছে!':'Yes, free parking for cars and motorcycles!';
   if(/bathroom|changing|locker|washroom|বাথরুম/.test(ml))
     return bn?'হ্যাঁ, পরিষ্কার changing room ও washroom আছে।':'Yes, clean changing room and washroom available.';
   if(/equipment|ball|glove|গ্লাভস/.test(ml))
@@ -1597,15 +1608,15 @@ function switchLiveTab(offset, el){
 }
 
 function goBookSlot(date, time){
-  // Go to book page and pre-fill date
   goPage('book');
   setTimeout(()=>{
     const dateInput = document.getElementById('b-date');
-    if(dateInput) dateInput.value = date;
+    const timeInput = document.getElementById('b-time');
+    if(dateInput){ dateInput.value = date; }
+    if(timeInput && time){ timeInput.value = time; }
     buildSlots();
-    // Scroll to slots
     document.getElementById('page-book').scrollTop = 0;
-  }, 100);
+  }, 150);
 }
 buildSlots();
 loadReviews();
@@ -1614,6 +1625,9 @@ loadLiveSlots(0);
 buildFAQ();
 setStar(5);
 initAuth();
+// Set today's date on book page by default
+const bDateEl = document.getElementById('b-date');
+if(bDateEl && !bDateEl.value){ bDateEl.value = today; buildSlots(); }
 
 // Secret URL detection
 function checkSecretHash() {
