@@ -928,13 +928,12 @@ function slotLbl(h){return h===0?'12 AM':h<12?h+' AM':h===12?'12 PM':(h-12)+' PM
 
 // Load bookings for a date from Supabase — includes previous day overflow
 async function getBookedRanges(date) {
-  // Current date bookings
   const { data: d1 } = await sb.from('bookings')
     .select('time, duration_minutes')
     .eq('booking_date', date)
     .neq('status', 'cancelled');
 
-  // Previous date bookings (for midnight overflow)
+  // Previous date for midnight overflow
   const prevDate = new Date(date);
   prevDate.setDate(prevDate.getDate() - 1);
   const prevDateStr = prevDate.toISOString().split('T')[0];
@@ -944,24 +943,16 @@ async function getBookedRanges(date) {
     .neq('status', 'cancelled');
 
   const ranges = [];
-
-  // Current day ranges
   (d1||[]).forEach(b => {
     const s = toMin(b.time.slice(0,5));
-    const e = s + (b.duration_minutes||60);
-    ranges.push({start:s, end:e});
+    ranges.push({start:s, end:s+(b.duration_minutes||60)});
   });
-
-  // Previous day overflow into current day (past midnight)
+  // Previous day overflow
   (d2||[]).forEach(b => {
     const s = toMin(b.time.slice(0,5));
     const e = s + (b.duration_minutes||60);
-    if(e > 1440) {
-      // This booking overflows into current day
-      ranges.push({start: 0, end: e - 1440});
-    }
+    if(e > 1440) ranges.push({start:0, end: e-1440});
   });
-
   return ranges;
 }
 
@@ -980,69 +971,28 @@ async function buildSlots() {
   const g = document.getElementById('sgrid'); if(!g) return;
   const dv = document.getElementById('b-date').value; if(!dv){ updateTotal(); return; }
   g.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Checking availability...</div>';
-
-  const now = new Date();
-  const isToday = dv === today;
-  const nowMin = now.getHours()*60 + now.getMinutes();
+  const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
   const currentTime = document.getElementById('b-time').value;
-
   const bookedRanges = await getBookedRanges(dv);
   const blockedRanges = getBlockedRanges(dv);
   const taken = bookedRanges.concat(blockedRanges);
-
-  // Sort taken ranges by start time
-  taken.sort((a,b) => a.start - b.start);
-
-  // Build dynamic slots:
-  // Slots start either at 0 (midnight) or right after a booking ends
-  // 6AM (360 min) resets to fixed hourly for new price tier
-  // Slots only go up to midnight (1440)
-
-  const RESET_POINTS = [360]; // 6AM resets
-  const slotStarts = new Set();
-
-  // Always add 0 (midnight start)
-  slotStarts.add(0);
-
-  // Add reset points
-  RESET_POINTS.forEach(r => slotStarts.add(r));
-
-  // Add end times of each booking as new slot start points
-  taken.forEach(t => {
-    const endMin = t.end % 1440; // wrap midnight
-    if(endMin > 0) slotStarts.add(endMin);
-    // Also add reset points after each booking end
-    RESET_POINTS.forEach(r => {
-      if(r > t.end % 1440) slotStarts.add(r);
-    });
-  });
-
-  // Convert to sorted array, filter out past midnight
-  let starts = Array.from(slotStarts).filter(s => s >= 0 && s < 1440).sort((a,b)=>a-b);
-
   g.innerHTML = '';
-
-  starts.forEach(sMin => {
-    const eMin = sMin + selDur;
-    if(eMin > 1440) return; // skip overflow slots
-
-    const tStr = String(Math.floor(sMin/60)).padStart(2,'0') + ':' + String(sMin%60).padStart(2,'0');
+  for(let h=0; h<24; h++) {
+    const tStr = String(h).padStart(2,'0') + ':00';
+    const sMin = h*60, eMin = sMin+selDur;
     const lbl = fmtTime(tStr+':00');
     const el = document.createElement('div');
-
     const isPast = isToday && sMin < nowMin;
     const isBooked = taken.some(t => rangesOverlap(sMin, eMin, t.start, t.end));
-
-    if(isPast) {
-      el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>';
-    } else if(isBooked) {
-      el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Booked</span>';
-    } else {
+    const overflow = eMin > 1440;
+    if(isPast) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>'; }
+    else if(overflow||isBooked) { el.className='sl no'; el.innerHTML=lbl+'<span class="slp">'+(isBooked?'Booked':'N/A')+'</span>'; }
+    else {
       const bEndLbl = fmtTime(fromMin(eMin));
       const amt = calcAmt(tStr, selDur);
       el.className = 'sl ok';
       el.innerHTML = lbl + `<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
-      if(tStr === currentTime) el.classList.add('sel');
+      if(tStr===currentTime) el.classList.add('sel');
       el.onclick = function() {
         document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
         el.classList.add('sel');
@@ -1051,8 +1001,7 @@ async function buildSlots() {
       };
     }
     g.appendChild(el);
-  });
-
+  }
   updateTotal();
 }
 
