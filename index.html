@@ -1024,9 +1024,13 @@ async function buildSlots() {
 
   zones.forEach(zone => {
     const zoneSlots = [];
+    let carryPointer = null;
 
     zone.segments.forEach(seg => {
-      let pointer = seg.start;
+      let pointer = (carryPointer !== null && carryPointer >= seg.start && carryPointer <= seg.end)
+        ? carryPointer : seg.start;
+      carryPointer = null;
+
       while(pointer + selDur <= seg.end) {
         const sMin = pointer;
         const eMin = pointer + selDur;
@@ -1037,6 +1041,7 @@ async function buildSlots() {
         zoneSlots.push({sMin, eMin, tStr, isPast, date:seg.date, price:zone.price});
         pointer += selDur;
       }
+      carryPointer = pointer;
     });
 
     if(zoneSlots.length === 0) return;
