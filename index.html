@@ -444,9 +444,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
 <!-- HOME -->
 <div class="page show" id="page-home">
   <div class="hero">
-    <div class="hero-badge">Premium Football Arena — Noakhali</div>
+    <div class="hero-badge">Noakhali's Biggest Football Arena</div>
     <h1>EL <b>CLASICO</b><br>Football Arena</h1>
-    <p>Noakhali-র সেরা turf — ২৪ ঘণ্টা, ৭ দিন খোলা</p>
+    <p>Noakhali-র সবচেয়ে বড় turf — FIFA Grade Synthetic Grass — ২৪ ঘণ্টা, ৭ দিন খোলা</p>
     <div class="hbtns">
       <button class="btn-g" onclick="goPage('book')">Book a slot</button>
       <button class="btn-o" onclick="goPage('pricing')">See pricing</button>
@@ -481,21 +481,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
   <div style="padding:1.2rem;padding-bottom:.4rem">
     <div class="sec-h" style="font-size:.95rem">Photo gallery</div>
   </div>
-  <div class="gallery">
-    <div class="gal-item" onclick="openLightbox('⚽','Main turf — full floodlights')"><div class="gal-img g1">⚽</div><div class="gal-label">Main turf</div></div>
-    <div class="gal-item" onclick="openLightbox('🌙','Night session — 6 PM to 6 AM')"><div class="gal-img g2">🌙</div><div class="gal-label">Night games</div></div>
-    <div class="gal-item" onclick="openLightbox('🏟️','Seating area for spectators')"><div class="gal-img g3">🏟️</div><div class="gal-label">Seating area</div></div>
-    <div class="gal-item" onclick="openLightbox('🚿','Clean changing rooms')"><div class="gal-img g4">🚿</div><div class="gal-label">Changing room</div></div>
-    <div class="gal-item" onclick="openLightbox('💡','Professional floodlights')"><div class="gal-img g5">💡</div><div class="gal-label">Floodlights</div></div>
-    <div class="gal-item" onclick="openLightbox('🏆','Tournament setup')"><div class="gal-img g6">🏆</div><div class="gal-label">Tournaments</div></div>
+  <div id="gallery-container" style="padding:0 1.2rem 1.2rem">
+    <div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div>
   </div>
 
   <div class="reviews-section">
     <div class="reviews-header">
       <h3>Customer reviews</h3>
-      <div class="overall-rating"><div class="big-star">4.9</div><div><div class="stars">★★★★★</div><div style="font-size:10px;color:var(--muted)">48 reviews</div></div></div>
+      <div class="overall-rating"><div class="big-star" id="avg-rating">—</div><div><div class="stars">★★★★★</div><div style="font-size:10px;color:var(--muted)" id="review-count">Loading...</div></div></div>
     </div>
-    <div class="review-grid" id="review-grid"></div>
+    <div class="review-grid" id="review-grid"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading reviews...</div></div>
     <button class="add-review-btn" onclick="toggleReviewForm()">+ Leave a review</button>
     <div class="review-form" id="review-form">
       <div class="star-picker" id="star-picker">
@@ -506,14 +501,15 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
       <div class="fg" style="margin-bottom:8px"><label>Your name</label><input type="text" id="rev-name" placeholder="Ahmed Hossain"></div>
       <div class="fg" style="margin-bottom:8px"><label>Your review</label><textarea id="rev-text" rows="2" placeholder="Share your experience..." style="resize:none"></textarea></div>
       <button class="cbtn" onclick="submitReview()">Submit review</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">Review admin approval এর পর দেখাবে</p>
     </div>
   </div>
 
   <div class="features">
-    <div class="feat"><div class="feat-icon">⚽</div><h3>Premium turf</h3><p>Synthetic grass with full floodlights — perfect night games.</p></div>
+    <div class="feat"><div class="feat-icon">⚽</div><h3>Premium turf</h3><p>Synthetic grass (FIFA Grade Quality) with full floodlights — perfect night games.</p></div>
     <div class="feat"><div class="feat-icon">📅</div><h3>Real-time booking</h3><p>Live slot availability — powered by Supabase database.</p></div>
     <div class="feat"><div class="feat-icon">🤖</div><h3>AI assistant</h3><p>Bangla or English — pricing, availability, booking help.</p></div>
-    <div class="feat"><div class="feat-icon">🏆</div><h3>Tournaments</h3><p>5v5, 7v7 or 11v11. Referee on request.</p></div>
+    <div class="feat"><div class="feat-icon">🏆</div><h3>Tournaments</h3><p>Referee at your own cost.</p></div>
   </div>
 
   <div class="footer">
@@ -702,6 +698,8 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
         <div class="at" onclick="saTab('calendar',this)">Calendar</div>
         <div class="at" onclick="saTab('block',this)">Block slots</div>
         <div class="at" onclick="saTab('pricing',this)">Pricing</div>
+        <div class="at" onclick="saTab('reviews',this)">Reviews</div>
+        <div class="at" onclick="saTab('gallery',this)">Gallery</div>
       </div>
       <div id="sa-bookings"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
       <div id="sa-revenue" style="display:none">
@@ -750,6 +748,24 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
         <button class="savebtn" onclick="savePricing()">Save base prices</button>
         <p id="price-saved" style="color:var(--g2);font-size:11px;margin-top:7px;display:none">Saved!</p>
       </div>
+
+      <!-- REVIEWS ADMIN -->
+      <div id="sa-reviews" style="display:none">
+        <div class="info-box">Pending reviews approve বা delete করুন।</div>
+        <div id="sa-reviews-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+      </div>
+
+      <!-- GALLERY ADMIN -->
+      <div id="sa-gallery" style="display:none">
+        <div class="info-box">Photo add করুন — URL দিয়ে। Category নতুন বানাতে পারবেন।</div>
+        <div class="bwrap" style="margin-bottom:.8rem">
+          <div class="fg" style="margin-bottom:8px"><label>Image URL (Google Drive, Imgur, etc.)</label><input type="text" id="gal-url" placeholder="https://i.imgur.com/example.jpg"></div>
+          <div class="fg" style="margin-bottom:8px"><label>Category (নতুন লিখলে নতুন category হবে)</label><input type="text" id="gal-cat" placeholder="Main Turf, Night Games, etc."></div>
+          <div class="fg" style="margin-bottom:10px"><label>Caption (optional)</label><input type="text" id="gal-caption" placeholder="Night session — full floodlights"></div>
+          <button class="cbtn" onclick="addGalleryPhoto()" style="margin-top:4px">Add Photo</button>
+        </div>
+        <div id="sa-gallery-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -778,11 +794,6 @@ let isDark = true;
 let calYear, calMonth;
 let revFilter = 'week';
 let selStars = 5;
-let reviews = [
-  {name:'Karim M.',stars:5,text:'সেরা turf! রাতের আলো অসাধারণ। দলের সবাই মুগ্ধ।',time:'2 days ago'},
-  {name:'Rafiq A.',stars:5,text:'Booking process very easy. Great experience overall!',time:'1 week ago'},
-  {name:'Sumon H.',stars:4,text:'ভালো turf, দাম একটু বেশি। তবে quality এর জন্য worth it।',time:'2 weeks ago'},
-];
 const today = new Date().toISOString().slice(0,10);
 const now2 = new Date();
 calYear = now2.getFullYear();
@@ -994,7 +1005,7 @@ async function searchHistory() {
   res.innerHTML='<div class="hist-empty"><span class="spin"></span>Searching...</div>';
   const {data}=await sb.from('bookings').select('*').ilike('phone','%'+ph.replace(/[-\s]/g,'')+'%').order('booking_date',{ascending:false});
   if(!data||!data.length){res.innerHTML='<div class="hist-empty">কোনো booking পাওয়া যায়নি</div>';return;}
-  res.innerHTML=data.map(b=>`<div class="hist-item"><div class="hist-top"><span class="hist-name">${b.name}</span><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></div><div class="hist-date">${b.booking_date} at ${b.time?b.time.slice(0,5):''} — ${b.duration_minutes} min</div><div class="hist-detail">Amount: ৳${(b.amount||0).toLocaleString()}</div></div>`).join('');
+  res.innerHTML=data.map(b=>`<div class="hist-item"><div class="hist-top"><span class="hist-name">${b.name}</span><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></div><div class="hist-date">${b.booking_date} at ${b.time?fmtTime(b.time.slice(0,5)):''} — ${b.duration_minutes} min</div><div class="hist-detail">Amount: ৳${(b.amount||0).toLocaleString()}</div></div>`).join('');
 }
 
 // ============================================================
@@ -1063,7 +1074,7 @@ function renderAdminTable(containerId, bookings) {
   const container=document.getElementById(containerId);
   if(!bookings.length){container.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">No bookings yet.</div>';return;}
   container.innerHTML=`<div style="overflow-x:auto"><table class="btable"><thead><tr><th>Name</th><th>Date</th><th>Time</th><th>Dur</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-    ${bookings.map(b=>`<tr><td>${b.name}</td><td>${b.booking_date}</td><td>${b.time?b.time.slice(0,5):''}</td><td>${b.duration_minutes}m</td><td>৳${(b.amount||0).toLocaleString()}</td><td><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></td><td>
+    ${bookings.map(b=>`<tr><td>${b.name}</td><td>${b.booking_date}</td><td>${b.time?fmtTime(b.time.slice(0,5)):''}</td><td>${b.duration_minutes}m</td><td>৳${(b.amount||0).toLocaleString()}</td><td><span class="bdg ${b.status==='confirmed'?'cf':b.status==='pending'?'pd':'cx'}">${b.status}</span></td><td>
       <button class="abtn wa" onclick="waConfirmBooking('${b.id}','${b.name}','${b.booking_date}','${b.time?b.time.slice(0,5):''}','${b.phone||''}')">✓ WA</button>
       <button class="abtn" onclick="toggleStatus('${b.id}','${b.status}','${containerId}')">Toggle</button>
       <button class="abtn del" onclick="delBooking('${b.id}','${containerId}')">Del</button>
@@ -1097,7 +1108,8 @@ async function delBooking(id, tableId) {
 function waConfirmBooking(id, name, date, time, phone) {
   if(!phone){alert('Phone number missing!');return;}
   if(phone.startsWith('0')) phone='88'+phone;
-  const msg=`Dear ${name},\n\nYour booking is Confirmed! ✅\nDate: ${date}\nTime: ${time}\n\nPlease arrive 10 minutes early.\n\nSee you at El Clasico Football Arena! ⚽`;
+  const friendlyTime = fmtTime(time);
+  const msg=`Dear ${name},\n\nYour booking is Confirmed! ✅\nDate: ${date}\nTime: ${friendlyTime}\n\nPlease arrive 10 minutes early.\n\nSee you at El Clasico Football Arena! ⚽`;
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1149,9 +1161,11 @@ function mgrTab(tab,el){
 }
 function saTab(tab,el){
   document.querySelectorAll('#sa-panel .at').forEach(t=>t.classList.remove('on'));el.classList.add('on');
-  ['bookings','revenue','calendar','block','pricing'].forEach(t=>document.getElementById('sa-'+t).style.display=t===tab?'block':'none');
+  ['bookings','revenue','calendar','block','pricing','reviews','gallery'].forEach(t=>document.getElementById('sa-'+t).style.display=t===tab?'block':'none');
   if(tab==='revenue'){loadSaPanel();}
   if(tab==='calendar'){loadSaPanel();}
+  if(tab==='reviews'){loadAdminReviews();}
+  if(tab==='gallery'){loadAdminGallery();}
 }
 
 // ============================================================
@@ -1221,20 +1235,105 @@ function savePricing(){
 }
 
 // ============================================================
-// REVIEWS
+// REVIEWS — Supabase backed
 // ============================================================
-function renderReviews(){
+async function loadReviews(){
   const g=document.getElementById('review-grid');if(!g)return;
-  g.innerHTML=reviews.map(r=>`<div class="review-card"><div class="rev-top"><div class="rev-av">${r.name.charAt(0)}</div><div><div class="rev-name">${r.name}</div><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--gold);font-size:12px">${'★'.repeat(r.stars)}</span><span class="rev-time">${r.time}</span></div></div></div><div class="rev-text">${r.text}</div></div>`).join('');
+  const {data}=await sb.from('reviews').select('*').eq('approved',true).order('created_at',{ascending:false});
+  if(!data||!data.length){g.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">এখনো কোনো review নেই।</div>';document.getElementById('review-count').textContent='0 reviews';document.getElementById('avg-rating').textContent='—';return;}
+  const avg=(data.reduce((a,r)=>a+r.rating,0)/data.length).toFixed(1);
+  document.getElementById('avg-rating').textContent=avg;
+  document.getElementById('review-count').textContent=data.length+' reviews';
+  g.innerHTML=data.map(r=>`<div class="review-card"><div class="rev-top"><div class="rev-av">${r.name.charAt(0).toUpperCase()}</div><div><div class="rev-name">${r.name}</div><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--gold);font-size:12px">${'★'.repeat(r.rating)}</span><span class="rev-time">${new Date(r.created_at).toLocaleDateString('bn-BD')}</span></div></div></div><div class="rev-text">${r.review}</div></div>`).join('');
 }
+
+async function loadAdminReviews(){
+  const c=document.getElementById('sa-reviews-list');if(!c)return;
+  const {data}=await sb.from('reviews').select('*').order('created_at',{ascending:false});
+  if(!data||!data.length){c.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">No reviews yet.</div>';return;}
+  c.innerHTML=data.map(r=>`<div class="hist-item"><div class="hist-top"><span class="hist-name">${r.name}</span><span class="bdg ${r.approved?'cf':'pd'}">${r.approved?'Approved':'Pending'}</span></div><div style="color:var(--gold);font-size:12px;margin-bottom:3px">${'★'.repeat(r.rating)}</div><div class="rev-text" style="margin-bottom:6px">${r.review}</div><div style="display:flex;gap:6px"><button class="abtn" onclick="approveReview('${r.id}',${r.approved})">${r.approved?'Unapprove':'Approve'}</button><button class="abtn del" onclick="deleteReview('${r.id}')">Delete</button></div></div>`).join('');
+}
+
+async function approveReview(id,current){
+  await sb.from('reviews').update({approved:!current}).eq('id',id);
+  loadAdminReviews();
+}
+
+async function deleteReview(id){
+  if(!confirm('Delete this review?'))return;
+  await sb.from('reviews').delete().eq('id',id);
+  loadAdminReviews();
+  loadReviews();
+}
+
 function toggleReviewForm(){const f=document.getElementById('review-form');f.style.display=f.style.display==='block'?'none':'block';}
 function setStar(n){selStars=n;document.querySelectorAll('.sp').forEach((s,i)=>s.classList.toggle('on',i<n));}
-function submitReview(){
-  const name=document.getElementById('rev-name').value.trim();const text=document.getElementById('rev-text').value.trim();
+
+async function submitReview(){
+  const name=document.getElementById('rev-name').value.trim();
+  const text=document.getElementById('rev-text').value.trim();
   if(!name||!text){alert('Name ও review দিন!');return;}
-  reviews.unshift({name,stars:selStars,text,time:'Just now'});
-  renderReviews();document.getElementById('review-form').style.display='none';
-  document.getElementById('rev-name').value='';document.getElementById('rev-text').value='';
+  const btn=document.querySelector('#review-form .cbtn');
+  btn.innerHTML='<span class="spin"></span>Submitting...';btn.disabled=true;
+  const {error}=await sb.from('reviews').insert({name,rating:selStars,review:text,approved:false});
+  btn.innerHTML='Submit review';btn.disabled=false;
+  if(error){alert('Error: '+error.message);return;}
+  document.getElementById('review-form').style.display='none';
+  document.getElementById('rev-name').value='';
+  document.getElementById('rev-text').value='';
+  alert('Review জমা হয়েছে! Admin approval এর পর দেখাবে। ধন্যবাদ ⭐');
+}
+
+// ============================================================
+// GALLERY — Supabase backed
+// ============================================================
+async function loadGallery(){
+  const c=document.getElementById('gallery-container');if(!c)return;
+  const {data}=await sb.from('gallery').select('*').order('created_at',{ascending:false});
+  if(!data||!data.length){c.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">Gallery empty — Admin panel থেকে photo add করুন।</div>';return;}
+  // Group by category
+  const cats={};
+  data.forEach(p=>{if(!cats[p.category])cats[p.category]=[];cats[p.category].push(p);});
+  let html='';
+  Object.entries(cats).forEach(([cat,photos])=>{
+    html+=`<div style="margin-bottom:1rem"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${cat}</div><div class="gallery">`;
+    photos.forEach(p=>{
+      html+=`<div class="gal-item" onclick="openLightboxImg('${p.image_url}','${p.caption||cat}')"><img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'gal-img g1\\' style=\\'width:100%;height:100%\\'>📷</div>'"><div class="gal-label">${p.caption||cat}</div></div>`;
+    });
+    html+='</div></div>';
+  });
+  c.innerHTML=html;
+}
+
+async function loadAdminGallery(){
+  const c=document.getElementById('sa-gallery-list');if(!c)return;
+  const {data}=await sb.from('gallery').select('*').order('created_at',{ascending:false});
+  if(!data||!data.length){c.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">No photos yet.</div>';return;}
+  c.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:.8rem">`+data.map(p=>`<div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--bdr)"><img src="${p.image_url}" style="width:100%;aspect-ratio:4/3;object-fit:cover" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 75%22><rect width=%22100%22 height=%2275%22 fill=%22%23111%22/><text x=%2250%22 y=%2237%22 text-anchor=%22middle%22 fill=%22%23555%22 font-size=%2212%22>Error</text></svg>'"><div style="padding:4px 6px;font-size:10px;color:var(--muted)">${p.category}</div><button class="abtn del" style="position:absolute;top:4px;right:4px;padding:2px 6px" onclick="deleteGalleryPhoto('${p.id}')">✕</button></div>`).join('')+'</div>';
+}
+
+async function addGalleryPhoto(){
+  const url=document.getElementById('gal-url').value.trim();
+  const cat=document.getElementById('gal-cat').value.trim();
+  const caption=document.getElementById('gal-caption').value.trim();
+  if(!url||!cat){alert('URL ও Category দিন!');return;}
+  const btn=document.querySelector('#sa-gallery .cbtn');
+  btn.innerHTML='<span class="spin"></span>Adding...';btn.disabled=true;
+  const {error}=await sb.from('gallery').insert({image_url:url,category:cat,caption:caption||null});
+  btn.innerHTML='Add Photo';btn.disabled=false;
+  if(error){alert('Error: '+error.message);return;}
+  document.getElementById('gal-url').value='';
+  document.getElementById('gal-caption').value='';
+  loadAdminGallery();
+  loadGallery();
+  alert('Photo added! ✅');
+}
+
+async function deleteGalleryPhoto(id){
+  if(!confirm('Delete this photo?'))return;
+  await sb.from('gallery').delete().eq('id',id);
+  loadAdminGallery();
+  loadGallery();
 }
 
 // ============================================================
@@ -1242,11 +1341,9 @@ function submitReview(){
 // ============================================================
 const faqs=[
   {q:'Parking কি আছে?',a:'হ্যাঁ, বিনামূল্যে গাড়ি পার্কিং আছে। Motorcycle ও bike parking ও আছে।'},
-  {q:'Dress code কি?',a:'Proper football boots বা turf shoes পরা আবশ্যক।'},
-  {q:'বাথরুম ও changing room আছে?',a:'হ্যাঁ, পরিষ্কার changing room, locker, ও washroom সুবিধা আছে।'},
-  {q:'কি কি equipment পাওয়া যায়?',a:'Ball ও bibs ভাড়ায় পাওয়া যায়। Goalkeeper gloves on request।'},
-  {q:'Group booking কিভাবে করবো?',a:'৫+ জনের group এর জন্য WhatsApp করুন 01633-305811 — special rate পাবেন।'},
-  {q:'কিভাবে payment করবো?',a:'Booking এর সময় bKash/Nagad, অথবা সরাসরি cash on arrival।'},
+  {q:'বাথরুম ও changing room আছে?',a:'হ্যাঁ, পরিষ্কার changing room ও washroom সুবিধা আছে।'},
+  {q:'কি কি equipment পাওয়া যায়?',a:'Football ও Goalkeeper gloves পাওয়া যায়।'},
+  {q:'কিভাবে payment করবো?',a:'Booking এর সময় bKash এ advance ৳৫০০ দিতে হবে।'},
 ];
 function buildFAQ(){
   const w=document.getElementById('faq-wrap');if(!w)return;
@@ -1262,7 +1359,8 @@ function toggleFAQ(i){
 // ============================================================
 // GALLERY / LIGHTBOX
 // ============================================================
-function openLightbox(emoji,caption){document.getElementById('lb-img').textContent=emoji;document.getElementById('lb-caption').textContent=caption;document.getElementById('lightbox').classList.add('open');}
+function openLightbox(emoji,caption){document.getElementById('lb-img').innerHTML=`<div style="font-size:4rem">${emoji}</div>`;document.getElementById('lb-caption').textContent=caption;document.getElementById('lightbox').classList.add('open');}
+function openLightboxImg(url,caption){document.getElementById('lb-img').innerHTML=`<img src="${url}" style="max-width:90vw;max-height:70vh;border-radius:12px;object-fit:contain">`;document.getElementById('lb-caption').textContent=caption;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
 // ============================================================
@@ -1296,32 +1394,51 @@ function toggleTheme(){
 }
 
 // ============================================================
-// AI CHAT
+// AI CHAT — Gemini via Supabase Edge Function
 // ============================================================
-const chatR={
-  avail:['EL Clasico is open 24/7! Go to the Book page to see live slot availability.','হ্যাঁ, সবসময় খোলা! Book page এ গিয়ে আপনার তারিখ দিন।'],
-  price:['Rates: 6AM–9AM ৳1500/hr, 9AM–3PM ৳1200/hr, 3PM–6PM ৳1800/hr, 6PM–6AM ৳2500/hr.','রেট: ভোর ৬-৯টা ৳১৫০০, সকাল ৯টা-বিকাল ৩টা ৳১২০০, বিকাল ৩-৬টা ৳১৮০০, রাত ৬টা-ভোর ৬টা ৳২৫০০।'],
-  cheap:['Cheapest: 9AM–3PM at ৳1200/hr!','সবচেয়ে কম: সকাল ৯টা-বিকাল ৩টা, মাত্র ৳১২০০/ঘণ্টা!'],
-  cancel:['Cancel 24+ hrs before = full refund. Within 24 hrs = no refund. WhatsApp: 01633-305811','২৪ ঘণ্টা আগে cancel = advance ফেরত। ২৪ ঘণ্টার মধ্যে cancel সম্ভব নয়।'],
-  parking:['Yes, free parking available!','হ্যাঁ, গাড়ি ও মোটরসাইকেলের জন্য বিনামূল্যে পার্কিং আছে!'],
-};
-function getAIReply(m){
-  const ml=m.toLowerCase();const bn=/[অ-ৱ]/.test(m)?1:0;
-  if(/avail|khali|free|open|slot|আছে|খালি/.test(ml))return chatR.avail[bn];
-  if(/price|cost|koto|taka|৳|daam|rate|দাম|কত|মূল্য/.test(ml))return chatR.price[bn];
-  if(/cheap|কম|সস্তা|lowest/.test(ml))return chatR.cheap[bn];
-  if(/cancel|refund|বাতিল/.test(ml))return chatR.cancel[bn];
-  if(/park|গাড়ি/.test(ml))return chatR.parking[bn];
-  return 'আরো সাহায্যের জন্য WhatsApp করুন: 01633-305811';
-}
+const EDGE_URL = 'https://ndzhkclijmnjqslkupdj.supabase.co/functions/v1/ai-chat';
+let chatHistory = [];
+
 function askq(t){document.getElementById('cinp').value=t;sendMsg();}
-function sendMsg(){
-  const inp=document.getElementById('cinp');const t=inp.value.trim();if(!t)return;
+
+async function sendMsg(){
+  const inp=document.getElementById('cinp');
+  const t=inp.value.trim();
+  if(!t)return;
   const mc=document.getElementById('msgs');
-  const um=document.createElement('div');um.className='msg u';um.textContent=t;mc.appendChild(um);
-  inp.value='';mc.scrollTop=mc.scrollHeight;
-  const ld=document.createElement('div');ld.className='msg b';ld.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';mc.appendChild(ld);
-  setTimeout(()=>{ld.textContent=getAIReply(t);mc.scrollTop=mc.scrollHeight;},850);
+
+  // User message
+  const um=document.createElement('div');
+  um.className='msg u';
+  um.textContent=t;
+  mc.appendChild(um);
+  inp.value='';
+  mc.scrollTop=mc.scrollHeight;
+
+  // Loading dots
+  const ld=document.createElement('div');
+  ld.className='msg b';
+  ld.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  mc.appendChild(ld);
+  mc.scrollTop=mc.scrollHeight;
+
+  try {
+    const res = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: t, history: chatHistory })
+    });
+    const data = await res.json();
+    const reply = data.reply || 'দুঃখিত, এখন উত্তর দিতে পারছি না।';
+    ld.textContent = reply;
+    chatHistory.push({ role:'user', content:t });
+    chatHistory.push({ role:'assistant', content:reply });
+    // Keep history max 10 messages
+    if(chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+  } catch(e) {
+    ld.textContent = 'Connection error। WhatsApp করুন: 01633-305811';
+  }
+  mc.scrollTop=mc.scrollHeight;
 }
 
 // ============================================================
@@ -1329,7 +1446,8 @@ function sendMsg(){
 // ============================================================
 document.getElementById('b-date').value=today;
 buildSlots();
-renderReviews();
+loadReviews();
+loadGallery();
 buildFAQ();
 setStar(5);
 initAuth();
