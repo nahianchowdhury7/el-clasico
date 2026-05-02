@@ -982,15 +982,9 @@ async function buildSlots() {
   const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
   const currentTime = document.getElementById('b-time').value;
 
-  // Next date (for Night zone overflow)
-  const dvDate = new Date(dv+'T00:00:00');
-  const nextDvDate = new Date(dvDate); nextDvDate.setDate(dvDate.getDate()+1);
-  const dv2 = nextDvDate.toISOString().split('T')[0];
-  const isToday2 = dv2===today;
-
-  // Load bookings for selected date and next date
+  // Load bookings for selected date only
+  // Night zone 6PM–6AM stored entirely under dv, duration may exceed midnight (end > 1440)
   const taken1 = (await getBookedRanges(dv)).concat(getBlockedRanges(dv)).sort((a,b)=>a.start-b.start);
-  const taken2 = (await getBookedRanges(dv2)).concat(getBlockedRanges(dv2)).sort((a,b)=>a.start-b.start);
 
   // Zones definition:
   // Morning, Daytime, Afternoon all live entirely within selected date (taken1)
@@ -1010,11 +1004,10 @@ async function buildSlots() {
     },
     {
       name:'Night', price:basePrices.night,
-      // Two segments but same zone — Night of dv: 6PM–midnight, then midnight–6AM of dv2
-      // booking_date always = dv for all night slots
+      // Single continuous segment: 6PM (1080) to next day 6AM (1800)
+      // All bookings stored under dv, time+duration may exceed 1440 for cross-midnight slots
       segments:[
-        {start:1080, end:1440, taken:taken1, isToday:isToday,  date:dv},
-        {start:0,    end:360,  taken:taken2, isToday:isToday2, date:dv}  // stored as dv
+        {start:1080, end:1800, taken:taken1, isToday:isToday, date:dv}
       ]
     },
   ];
@@ -1059,7 +1052,7 @@ async function buildSlots() {
       if(isPast) {
         el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>';
       } else {
-        const bEndLbl = fmtTime(fromMin(eMin % 1440));
+        const bEndLbl = fmtTime(fromMin(eMin >= 1440 ? eMin - 1440 : eMin));
         const ov = priceOverrides.find(o=>o.time===tStr&&o.dur===selDur);
         const amt = ov ? ov.price : Math.round(price*(selDur/60));
         el.className='sl ok';
