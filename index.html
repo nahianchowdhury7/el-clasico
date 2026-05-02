@@ -972,49 +972,120 @@ async function buildSlots() {
   const dv = document.getElementById('b-date').value; if(!dv){ updateTotal(); return; }
   g.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Checking availability...</div>';
 
-  const now = new Date(), isToday = dv===today, nowMin = now.getHours()*60+now.getMinutes();
+  const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
   const currentTime = document.getElementById('b-time').value;
-  const bookedRanges = await getBookedRanges(dv);
-  const blockedRanges = getBlockedRanges(dv);
-  const taken = bookedRanges.concat(blockedRanges).sort((a,b)=>a.start-b.start);
 
-  // Price zones for this day (in display order)
-  // Zone N: 0–360 (midnight to 6AM, continuation from prev day's 6PM)
-  // Zone M: 360–540 (6AM–9AM)
-  // Zone D: 540–900 (9AM–3PM)
-  // Zone A: 900–1080 (3PM–6PM)
-  // Zone N2: 1080–1440 (6PM–midnight, continues to next day 6AM)
-  const zones = [
-    {name:'Night',    start:0,    end:360,  price:basePrices.night},
-    {name:'Morning',  start:360,  end:540,  price:basePrices.early},
-    {name:'Daytime',  start:540,  end:900,  price:basePrices.day},
-    {name:'Afternoon',start:900,  end:1080, price:basePrices.eve},
-    {name:'Night',    start:1080, end:1440, price:basePrices.night},
+  // Compute next date string
+  const dvDate = new Date(dv);
+  const nextDvDate = new Date(dvDate); nextDvDate.setDate(dvDate.getDate()+1);
+  const dv2 = nextDvDate.toISOString().split('T')[0];
+
+  // Load booked/blocked ranges for both dates
+  const bookedRanges1 = await getBookedRanges(dv);
+  const blockedRanges1 = getBlockedRanges(dv);
+  const taken1 = bookedRanges1.concat(blockedRanges1).sort((a,b)=>a.start-b.start);
+
+  const bookedRanges2 = await getBookedRanges(dv2);
+  const blockedRanges2 = getBlockedRanges(dv2);
+  const taken2 = bookedRanges2.concat(blockedRanges2).sort((a,b)=>a.start-b.start);
+
+  // Zones per date. Each entry: {name, start, end, price, date, isToday, taken}
+  // Zone N (6PM–midnight) of date X is labeled as date X even though it ends after midnight.
+  // Zone N (midnight–6AM) of date X+1 is actually Zone N's early morning — label still uses date X.
+  // So: for date X+1 we skip the 0–360 (midnight–6AM) block from its zone list;
+  //     instead we append it to date X's Zone N display as a continuation.
+  //
+  // Combined zone list (in display order):
+  // Date X:   Night 0–360 (prev night tail, label=X), Morning 360–540, Daytime 540–900, Afternoon 900–1080, Night 1080–1440+360 (label=X)
+  // The Night zone that starts at 1080 on date X continues into date X+1 0–360.
+  // We model this as two sub-zones sharing the same header, under date X label.
+  // Date X+1: Morning 360–540, Daytime 540–900, Afternoon 900–1080, Night 1080–1440+360(next) — label=X+1
+
+  function fmtDateShort(ds) {
+    const d = new Date(ds+'T00:00:00');
+    return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  }
+
+  const isToday1 = dv===today;
+  const isToday2 = dv2===today;
+
+  // Build zone groups for display
+  // Each group: {header, date, subzones:[{start,end,taken,isToday,date}]}
+  const zoneGroups = [
+    // Date X — Night tail (midnight–6AM), belongs to prev day's Zone N session
+    // (This is overflow from the previous day's 6PM–6AM zone, label = dv)
+    {
+      header: `Night — ৳${basePrices.night.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv),
+      subzones: [{start:0, end:360, taken:taken1, isToday:isToday1, date:dv, price:basePrices.night}]
+    },
+    {
+      header: `Morning — ৳${basePrices.early.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv),
+      subzones: [{start:360, end:540, taken:taken1, isToday:isToday1, date:dv, price:basePrices.early}]
+    },
+    {
+      header: `Daytime — ৳${basePrices.day.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv),
+      subzones: [{start:540, end:900, taken:taken1, isToday:isToday1, date:dv, price:basePrices.day}]
+    },
+    {
+      header: `Afternoon — ৳${basePrices.eve.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv),
+      subzones: [{start:900, end:1080, taken:taken1, isToday:isToday1, date:dv, price:basePrices.eve}]
+    },
+    // Date X Night: 6PM (1080) to midnight (1440) on date X, then midnight (0) to 6AM (360) on date X+1
+    // Both labeled as date X
+    {
+      header: `Night — ৳${basePrices.night.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv),
+      subzones: [
+        {start:1080, end:1440, taken:taken1, isToday:isToday1, date:dv, price:basePrices.night},
+        {start:0,    end:360,  taken:taken2, isToday:isToday2, date:dv, price:basePrices.night} // midnight–6AM of next date, still labeled dv
+      ]
+    },
+    // Date X+1 zones (starting from Morning, skip 0–360 since it's covered above)
+    {
+      header: `Morning — ৳${basePrices.early.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv2),
+      subzones: [{start:360, end:540, taken:taken2, isToday:isToday2, date:dv2, price:basePrices.early}]
+    },
+    {
+      header: `Daytime — ৳${basePrices.day.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv2),
+      subzones: [{start:540, end:900, taken:taken2, isToday:isToday2, date:dv2, price:basePrices.day}]
+    },
+    {
+      header: `Afternoon — ৳${basePrices.eve.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv2),
+      subzones: [{start:900, end:1080, taken:taken2, isToday:isToday2, date:dv2, price:basePrices.eve}]
+    },
+    {
+      header: `Night — ৳${basePrices.night.toLocaleString()}/hr`,
+      dateLabel: fmtDateShort(dv2),
+      subzones: [{start:1080, end:1440, taken:taken2, isToday:isToday2, date:dv2, price:basePrices.night}]
+    },
   ];
 
   g.innerHTML = '';
   let hasAny = false;
 
-  zones.forEach(zone => {
-    let pointer = zone.start;
+  zoneGroups.forEach(group => {
     const zoneSlots = [];
 
-    while(pointer + selDur <= zone.end) {
-      const sMin = pointer;
-      const eMin = pointer + selDur;
-      const tStr = fromMin(sMin);
-      const isPast = isToday && sMin < nowMin;
-      const blocking = taken.find(t => rangesOverlap(sMin, eMin, t.start, t.end));
-
-      if(blocking) {
-        // Skip past the blocking booking
-        pointer = blocking.end;
-        continue;
+    group.subzones.forEach(({start, end, taken, isToday, date, price}) => {
+      let pointer = start;
+      while(pointer + selDur <= end) {
+        const sMin = pointer;
+        const eMin = pointer + selDur;
+        const tStr = fromMin(sMin);
+        const isPast = isToday && sMin < nowMin;
+        const blocking = taken.find(t => rangesOverlap(sMin, eMin, t.start, t.end));
+        if(blocking) { pointer = blocking.end; continue; }
+        zoneSlots.push({sMin, eMin, tStr, isPast, date, price});
+        pointer += selDur;
       }
-
-      zoneSlots.push({sMin, eMin, tStr, isPast});
-      pointer += selDur;
-    }
+    });
 
     if(zoneSlots.length === 0) return;
     hasAny = true;
@@ -1022,24 +1093,26 @@ async function buildSlots() {
     // Zone header
     const zh = document.createElement('div');
     zh.style.cssText = 'font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 0 4px;grid-column:1/-1;border-top:1px solid var(--bdr);margin-top:4px';
-    zh.textContent = `${zone.name} — ৳${zone.price.toLocaleString()}/hr`;
+    zh.textContent = `${group.dateLabel} · ${group.header}`;
     g.appendChild(zh);
 
-    zoneSlots.forEach(({sMin, eMin, tStr, isPast}) => {
+    zoneSlots.forEach(({sMin, eMin, tStr, isPast, date, price}) => {
       const lbl = fmtTime(tStr+':00');
       const el = document.createElement('div');
       if(isPast) {
         el.className='sl no'; el.innerHTML=lbl+'<span class="slp">Past</span>';
       } else {
-        const bEndLbl = fmtTime(fromMin(eMin));
+        const endMin = eMin % 1440;
+        const bEndLbl = fmtTime(fromMin(endMin));
         const ov = priceOverrides.find(o=>o.time===tStr&&o.dur===selDur);
-        const amt = ov ? ov.price : Math.round(zone.price*(selDur/60));
+        const amt = ov ? ov.price : Math.round(price*(selDur/60));
         el.className='sl ok';
         el.innerHTML=lbl+`<span class="slp">→ ${bEndLbl} · ৳${amt.toLocaleString()}</span>`;
-        if(tStr===currentTime) el.classList.add('sel');
+        if(tStr===currentTime && date===dv) el.classList.add('sel');
         el.onclick=function(){
           document.querySelectorAll('#sgrid .sl.ok').forEach(x=>x.classList.remove('sel'));
           el.classList.add('sel');
+          document.getElementById('b-date').value=date;
           document.getElementById('b-time').value=tStr;
           updateTotal();
         };
