@@ -1446,6 +1446,11 @@ async function addGalleryPhoto(){
   const cat=document.getElementById('gal-cat').value.trim();
   const caption=document.getElementById('gal-caption').value.trim();
   if(!url||!cat){alert('URL ও Category দিন!');return;}
+  // Auto-convert Google Drive share link to direct image link
+  if(url.includes('drive.google.com/file/d/')) {
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if(match) url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  }
   const btn=document.querySelector('#sa-gallery .cbtn');
   btn.innerHTML='<span class="spin"></span>Adding...';btn.disabled=true;
   const {error}=await sb.from('gallery').insert({image_url:url,category:cat,caption:caption||null});
