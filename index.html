@@ -870,12 +870,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:12px 1
 
       <!-- GALLERY ADMIN -->
       <div id="sa-gallery" style="display:none">
-        <div class="info-box">Photo add করুন — URL দিয়ে। Category নতুন বানাতে পারবেন।</div>
+        <div class="info-box">Photo add করুন — সরাসরি ছবি upload করুন। Category নতুন বানাতে পারবেন।</div>
         <div class="bwrap" style="margin-bottom:.8rem">
-          <div class="fg" style="margin-bottom:8px"><label>Image URL (Google Drive, Imgur, etc.)</label><input type="text" id="gal-url" placeholder="https://i.imgur.com/example.jpg"></div>
+          <div class="fg" style="margin-bottom:8px">
+            <label>ছবি select করুন (JPG, PNG, WEBP — max 5MB)</label>
+            <input type="file" id="gal-file" accept="image/jpeg,image/png,image/webp,image/gif" style="color:var(--txt);padding:6px 0">
+            <div id="gal-preview" style="margin-top:6px"></div>
+          </div>
           <div class="fg" style="margin-bottom:8px"><label>Category (নতুন লিখলে নতুন category হবে)</label><input type="text" id="gal-cat" placeholder="Main Turf, Night Games, etc."></div>
           <div class="fg" style="margin-bottom:10px"><label>Caption (optional)</label><input type="text" id="gal-caption" placeholder="Night session — full floodlights"></div>
-          <button class="cbtn" onclick="addGalleryPhoto()" style="margin-top:4px">Add Photo</button>
+          <button class="cbtn" onclick="addGalleryPhoto()" style="margin-top:4px">Upload Photo</button>
         </div>
         <div id="sa-gallery-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
       </div>
@@ -1524,26 +1528,43 @@ async function loadAdminGallery(){
 }
 
 async function addGalleryPhoto(){
-  const url=document.getElementById('gal-url').value.trim();
+  const fileInput=document.getElementById('gal-file');
   const cat=document.getElementById('gal-cat').value.trim();
   const caption=document.getElementById('gal-caption').value.trim();
-  if(!url||!cat){alert('URL ও Category দিন!');return;}
-  // Auto-convert Google Drive share link to direct image link
-  if(url.includes('drive.google.com/file/d/')) {
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if(match) url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-  }
+  const file=fileInput.files[0];
+  if(!file){alert('ছবি select করুন!');return;}
+  if(!cat){alert('Category দিন!');return;}
+  if(file.size>5*1024*1024){alert('ছবি ৫MB-এর বেশি হতে পারবে না!');return;}
   const btn=document.querySelector('#sa-gallery .cbtn');
-  btn.innerHTML='<span class="spin"></span>Adding...';btn.disabled=true;
-  const {error}=await sb.from('gallery').insert({image_url:url,category:cat,caption:caption||null});
-  btn.innerHTML='Add Photo';btn.disabled=false;
-  if(error){alert('Error: '+error.message);return;}
-  document.getElementById('gal-url').value='';
+  btn.innerHTML='<span class="spin"></span>Uploading...';btn.disabled=true;
+  const ext=file.name.split('.').pop();
+  const fileName=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
+  const {data:uploadData,error:uploadError}=await sb.storage.from('gallery').upload(fileName,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+  if(uploadError){btn.innerHTML='Upload Photo';btn.disabled=false;alert('Upload error: '+uploadError.message);return;}
+  const {data:urlData}=sb.storage.from('gallery').getPublicUrl(fileName);
+  const publicUrl=urlData.publicUrl;
+  const {error}=await sb.from('gallery').insert({image_url:publicUrl,category:cat,caption:caption||null});
+  btn.innerHTML='Upload Photo';btn.disabled=false;
+  if(error){alert('DB Error: '+error.message);return;}
+  fileInput.value='';
+  document.getElementById('gal-preview').innerHTML='';
   document.getElementById('gal-caption').value='';
   loadAdminGallery();
   loadGallery();
-  alert('Photo added! ✅');
+  alert('Photo uploaded! ✅');
 }
+
+document.addEventListener('DOMContentLoaded',function(){
+  var fi=document.getElementById('gal-file');
+  if(fi){fi.addEventListener('change',function(){
+    var prev=document.getElementById('gal-preview');
+    if(this.files&&this.files[0]){
+      var r=new FileReader();
+      r.onload=function(e){prev.innerHTML='<img src="'+e.target.result+'" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-top:4px">';};
+      r.readAsDataURL(this.files[0]);
+    }else{prev.innerHTML='';}
+  });}
+});
 
 async function deleteGalleryPhoto(id){
   if(!confirm('Delete this photo?'))return;
