@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nahianchowdhury7.github.io/el-clasico/sitemap.xml
