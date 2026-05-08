@@ -51,12 +51,170 @@ function updateNavAuth() {
   const area = document.getElementById('nav-auth-area');
   if (currentUser) {
     const name = currentProfile?.name || currentUser.email.split('@')[0];
-    area.innerHTML = `<div class="user-chip" onclick="handleLogout()"><span>👤 ${name}</span></div>`;
+    area.innerHTML = `
+      <div class="user-chip" onclick="toggleUserDropdown(event)" id="user-chip">
+        <span>👤 ${name}</span>
+        <span class="ud-arrow">▾</span>
+      </div>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="ud-header">
+          <div class="ud-avatar">${name.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="ud-name">${name}</div>
+            <div class="ud-phone">${currentProfile?.phone || ''}</div>
+          </div>
+        </div>
+        <div class="ud-divider"></div>
+        <div class="ud-item" onclick="openProfileModal()">👤 Profile</div>
+        <div class="ud-item" onclick="openMyBookings()">📋 My Bookings</div>
+        <div class="ud-item" onclick="openMyHistory()">📜 History</div>
+        <div class="ud-divider"></div>
+        <div class="ud-item ud-logout" onclick="handleLogout()">🚪 Logout</div>
+      </div>`;
     document.getElementById('book-login-notice').style.display = 'none';
   } else {
     area.innerHTML = `<button class="nb" onclick="openAuthModal()">Login</button>`;
     document.getElementById('book-login-notice').style.display = 'block';
   }
+}
+
+function toggleUserDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('user-dropdown');
+  if (!dd) return;
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', function() {
+  const dd = document.getElementById('user-dropdown');
+  if (dd) dd.classList.remove('open');
+});
+
+// ============================================================
+// PROFILE MODAL
+// ============================================================
+function openProfileModal() {
+  closeUserDropdown();
+  const name = currentProfile?.name || '';
+  const phone = currentProfile?.phone || '';
+  // inject modal if not exists
+  let pm = document.getElementById('profile-modal');
+  if (!pm) {
+    pm = document.createElement('div');
+    pm.id = 'profile-modal';
+    pm.className = 'modal-overlay';
+    document.body.appendChild(pm);
+  }
+  pm.innerHTML = `
+    <div class="modal-box">
+      <h3>My Profile</h3>
+      <div class="fg" style="margin-bottom:10px">
+        <label>Name</label>
+        <input type="text" id="prof-name" value="${name}" placeholder="Your name">
+      </div>
+      <div class="fg" style="margin-bottom:14px">
+        <label>Phone <span style="font-size:10px;color:var(--muted)">(edit করা যাবে না)</span></label>
+        <input type="text" value="${phone}" disabled style="opacity:0.5;cursor:not-allowed">
+      </div>
+      <button class="cbtn" onclick="saveProfile()">Save changes</button>
+      <p id="prof-msg" style="font-size:11px;text-align:center;margin-top:8px;display:none"></p>
+      <div style="text-align:center;margin-top:10px">
+        <button onclick="closeProfileModal()" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer">Close</button>
+      </div>
+    </div>`;
+  pm.classList.add('open');
+}
+
+function closeProfileModal() {
+  const pm = document.getElementById('profile-modal');
+  if (pm) pm.classList.remove('open');
+}
+
+async function saveProfile() {
+  const newName = document.getElementById('prof-name').value.trim();
+  const msg = document.getElementById('prof-msg');
+  if (!newName) { msg.textContent = 'নাম দিন'; msg.style.color = '#ef5350'; msg.style.display = 'block'; return; }
+  const btn = document.querySelector('#profile-modal .cbtn');
+  btn.innerHTML = '<span class="spin"></span>Saving...'; btn.disabled = true;
+  const { error } = await sb.from('profiles').upsert({ id: currentUser.id, name: newName, phone: currentProfile?.phone });
+  btn.innerHTML = 'Save changes'; btn.disabled = false;
+  if (error) { msg.textContent = 'Error: ' + error.message; msg.style.color = '#ef5350'; msg.style.display = 'block'; return; }
+  currentProfile = { ...currentProfile, name: newName };
+  msg.textContent = 'Saved! ✓'; msg.style.color = 'var(--g2)'; msg.style.display = 'block';
+  updateNavAuth();
+  setTimeout(closeProfileModal, 1200);
+}
+
+// ============================================================
+// MY BOOKINGS MODAL
+// ============================================================
+function openMyBookings() {
+  closeUserDropdown();
+  let bm = document.getElementById('mybookings-modal');
+  if (!bm) {
+    bm = document.createElement('div');
+    bm.id = 'mybookings-modal';
+    bm.className = 'modal-overlay';
+    document.body.appendChild(bm);
+  }
+  bm.innerHTML = `
+    <div class="modal-box" style="max-height:85vh;overflow-y:auto">
+      <h3>My Bookings</h3>
+      <div id="mybookings-list"><div style="color:var(--muted);font-size:12px;padding:8px;text-align:center"><span class="spin"></span> Loading...</div></div>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="closeMyBookings()" style="background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer">Close</button>
+      </div>
+    </div>`;
+  bm.classList.add('open');
+  loadMyBookings();
+}
+
+async function loadMyBookings() {
+  const list = document.getElementById('mybookings-list');
+  if (!list || !currentUser) return;
+  const { data } = await sb.from('bookings').select('*').eq('user_id', currentUser.id).order('booking_date', { ascending: false }).limit(20);
+  if (!data || !data.length) { list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px;text-align:center">কোনো booking নেই</div>'; return; }
+  const upcoming = data.filter(b => b.booking_date >= today && b.status !== 'cancelled');
+  const past = data.filter(b => b.booking_date < today || b.status === 'cancelled');
+  let html = '';
+  if (upcoming.length) {
+    html += `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Upcoming</div>`;
+    html += upcoming.map(b => bookingCard(b)).join('');
+  }
+  if (past.length) {
+    html += `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px">Past</div>`;
+    html += past.map(b => bookingCard(b)).join('');
+  }
+  list.innerHTML = html;
+}
+
+function openMyHistory() {
+  closeUserDropdown();
+  // same as my bookings but shows all
+  openMyBookings();
+}
+
+function bookingCard(b) {
+  const statusClass = b.status === 'confirmed' ? 'cf' : b.status === 'pending' ? 'pd' : 'cx';
+  const timeStr = b.time ? fmtTime(b.time.slice(0, 5)) : '';
+  return `<div class="hist-item">
+    <div class="hist-top">
+      <span class="hist-name">${b.booking_date} — ${timeStr}</span>
+      <span class="bdg ${statusClass}">${b.status}</span>
+    </div>
+    <div class="hist-date">${b.duration_minutes} min · ৳${(b.amount || 0).toLocaleString()}</div>
+    ${b.note ? `<div class="hist-detail">${b.note}</div>` : ''}
+  </div>`;
+}
+
+function closeMyBookings() {
+  const bm = document.getElementById('mybookings-modal');
+  if (bm) bm.classList.remove('open');
+}
+
+function closeUserDropdown() {
+  const dd = document.getElementById('user-dropdown');
+  if (dd) dd.classList.remove('open');
 }
 
 async function doLogin() {
