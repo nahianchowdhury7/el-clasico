@@ -40,12 +40,28 @@ async function saLogin() {
   document.getElementById('sa-auth-check').style.display = 'none';
   document.getElementById('sa-panel').classList.add('show');
   loadSaPanel();
+  startSaAutoRefresh();
 }
 
 function showSaErr(msg) {
   const e = document.getElementById('sa-err');
   e.textContent = msg;
   e.style.display = 'block';
+}
+
+let saRefreshTimer = null;
+function startSaAutoRefresh() {
+  if (saRefreshTimer) clearInterval(saRefreshTimer);
+  saRefreshTimer = setInterval(() => {
+    const panel = document.getElementById('sa-panel');
+    if (panel && panel.classList.contains('show')) {
+      const activeTab = document.querySelector('#sa-panel .at.on');
+      if (activeTab) {
+        const tabText = activeTab.textContent.trim().toLowerCase();
+        if (tabText === 'bookings') loadSaPanel();
+      }
+    }
+  }, 10000);
 }
 
 // ============================================================
