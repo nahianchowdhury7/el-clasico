@@ -229,6 +229,21 @@ async function doLogin() {
   else { closeAuthModal(); }
 }
 
+function openForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  const input = prompt('আপনার email দিন — password reset link পাঠানো হবে:', email || '');
+  if (!input || !input.trim()) return;
+  sendPasswordReset(input.trim());
+}
+
+async function sendPasswordReset(email) {
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://nahianchowdhury7.github.io/el-clasico/'
+  });
+  if (error) { alert('Error: ' + error.message); }
+  else { alert('✅ Reset link পাঠানো হয়েছে! আপনার email চেক করুন।'); closeAuthModal(); }
+}
+
 async function doSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const phone = document.getElementById('signup-phone').value.trim();
@@ -510,6 +525,10 @@ function goPage(id){
   setTimeout(()=>{const pg=document.getElementById('page-'+id);if(pg)pg.classList.add('show');},20);
   const nl=document.getElementById('nl-'+id);if(nl)nl.classList.add('active');
   closeNav();window.scrollTo(0,0);
+  if(id==='home'){ loadLiveSlots(liveTabOffset); loadReviews(); loadGallery(); }
+  if(id==='book'){ buildSlots(); }
+  if(id==='manager' && typeof loadAdminPanel==='function' && adminRole){ loadAdminPanel(); }
+  if(id==='sadmin' && typeof loadSaPanel==='function' && adminRole==='superadmin'){ loadSaPanel(); }
 }
 function toggleNav(){
   const links=document.getElementById('nav-links');
@@ -705,3 +724,31 @@ function checkSecretHash() {
 }
 checkSecretHash();
 window.addEventListener('hashchange', checkSecretHash);
+
+// ── REALTIME ──
+function initRealtime() {
+  sb.channel('bookings-rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+      const activePage = document.querySelector('.page.show');
+      if (!activePage) return;
+      const id = activePage.id.replace('page-', '');
+      if (id === 'home') loadLiveSlots(liveTabOffset);
+      if (id === 'book') buildSlots();
+      if (id === 'manager' && typeof loadAdminPanel === 'function' && adminRole) loadAdminPanel();
+      if (id === 'sadmin' && typeof loadSaPanel === 'function' && adminRole === 'superadmin') loadSaPanel();
+    })
+    .subscribe();
+}
+initRealtime();
+
+// ── VISIBILITY ──
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const activePage = document.querySelector('.page.show');
+  if (!activePage) return;
+  const id = activePage.id.replace('page-', '');
+  if (id === 'home') loadLiveSlots(liveTabOffset);
+  if (id === 'book') buildSlots();
+  if (id === 'manager' && typeof loadAdminPanel === 'function' && adminRole) loadAdminPanel();
+  if (id === 'sadmin' && typeof loadSaPanel === 'function' && adminRole === 'superadmin') loadSaPanel();
+});
