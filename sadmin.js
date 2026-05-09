@@ -90,6 +90,7 @@ function saTab(tab, el) {
   ['bookings', 'revenue', 'calendar', 'block', 'pricing', 'reviews', 'gallery'].forEach(t => {
     document.getElementById('sa-' + t).style.display = t === tab ? 'block' : 'none';
   });
+  if (tab === 'bookings') loadSaPanel();
   if (tab === 'revenue')  loadSaPanel();
   if (tab === 'calendar') loadSaPanel();
   if (tab === 'reviews')  loadAdminReviews();
