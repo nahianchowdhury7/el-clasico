@@ -55,6 +55,15 @@ function startMgrAutoRefresh() {
   }, 10000);
 }
 
+let mgrRefreshTimer = null;
+function startMgrAutoRefresh() {
+  if (mgrRefreshTimer) clearInterval(mgrRefreshTimer);
+  mgrRefreshTimer = setInterval(() => {
+    const panel = document.getElementById('mgr-panel');
+    if (panel && panel.classList.contains('show')) loadAdminPanel();
+  }, 10000);
+}
+
 // ============================================================
 // MANAGER PANEL — load & render
 // ============================================================
@@ -138,6 +147,8 @@ function ensureSlotGridStyles() {
     .sd-btn.call-sim{background:#E3F2FD;color:#1565C0;border-color:#90CAF9}
     .sd-btn.call-wa{background:#E8F5E9;color:#1B5E20;border-color:#A5D6A7}
     .sd-textarea{width:100%;min-height:90px;padding:10px 12px;border-radius:10px;border:1px solid var(--bdr,#3334);background:var(--bg,#15171b);color:inherit;font-size:13px;box-sizing:border-box;margin-top:12px;font-family:inherit;resize:vertical}
+    .sd-locked-badge{font-size:11px;background:#1a3a1a;color:#4caf50;border:1px solid #2e7d32;border-radius:12px;padding:3px 10px;margin-left:auto;margin-right:8px;white-space:nowrap}
+    .sd-locked-notice{background:#1a3a1a;color:#81c784;border:1px solid #2e7d32;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:8px;text-align:center}
     .sd-pmt{font-weight:700;text-align:center}
     .sd-pmt.advanced{background:#FFE9B5 !important;color:#7a5300 !important;border-color:#C99416 !important}
     .sd-pmt.paid{background:#CFEFD8 !important;color:#0E7A3B !important;border-color:#0E7A3B !important}
@@ -499,12 +510,20 @@ async function openSlotDetailModal(containerId, bookingId) {
 
   const safeAttr = v => String(v == null ? '' : v).replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
+  // confirmed হলে permanently locked
+  const isConfirmed = b.status === 'confirmed';
+  const ro = isConfirmed ? ' readonly' : '';
+  const roClass = isConfirmed ? ' sd-ro' : '';
+  const noInput = isConfirmed ? ' oninput=""' : ' oninput="recalcSlotPay()"';
+
   m.innerHTML = `
     <div class="sd-card" onclick="event.stopPropagation()">
       <div class="sd-head">
         <div class="sd-title">${safeAttr(slotLabel)}</div>
+        ${isConfirmed ? '<span class="sd-locked-badge">🔒 Confirmed — Locked</span>' : ''}
         <button class="sd-close" onclick="closeSlotDetailModal()">×</button>
       </div>
+      ${isConfirmed ? '<div class="sd-locked-notice">এই booking confirmed ও paid। আর কোনো পরিবর্তন করা যাবে না।</div>' : ''}
       <div class="sd-row">
         <div class="sd-fld"><label class="sd-lbl">তারিখ</label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.booking_date || '')}"></div>
         <div class="sd-fld"><label class="sd-lbl">সময়</label><input class="sd-inp sd-ro" readonly value="${safeAttr(zname + ' ' + zoneIdx + ' — ' + fmtMin(b._start) + ' - ' + fmtMin(b._end))}"></div>
@@ -514,8 +533,8 @@ async function openSlotDetailModal(containerId, bookingId) {
         <div class="sd-fld"><label class="sd-lbl">Customer History</label><div class="sd-bdg-row"><span class="sd-bdg played">Played: ${played}</span><span class="sd-bdg cancelled">Cancelled: ${cancelled}</span></div></div>
       </div>
       <div class="sd-row">
-        <div class="sd-fld"><label class="sd-lbl">নাম <span style="color:#d9534f">*</span></label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.name || '')}"></div>
-        <div class="sd-fld"><label class="sd-lbl">ঠিকানা <span style="color:#d9534f">*</span></label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.address || b.note || '')}"></div>
+        <div class="sd-fld"><label class="sd-lbl">নাম</label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.name || '')}"></div>
+        <div class="sd-fld"><label class="sd-lbl">ঠিকানা</label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.address || b.note || '')}"></div>
       </div>
       <div class="sd-row">
         <div class="sd-fld"><label class="sd-lbl">bKash Transaction ID</label><input class="sd-inp sd-ro" readonly value="${safeAttr(b.bkash_trxid || '—')}"></div>
@@ -523,38 +542,48 @@ async function openSlotDetailModal(containerId, bookingId) {
       </div>
       <div class="sd-row">
         <div class="sd-fld" style="grid-column:1/-1"><label class="sd-lbl">পেমেন্ট</label>
-          <select class="sd-sel sd-pmt ${paymentValue.toLowerCase()}" id="sd-payment" onchange="onPaymentStatusChange(this)">
-            <option value="Advanced"  ${paymentValue==='Advanced' ?'selected':''}>⏳ Advanced</option>
-            <option value="Paid"      ${paymentValue==='Paid'     ?'selected':''}>✅ Paid</option>
-            <option value="Unpaid"    ${paymentValue==='Unpaid'   ?'selected':''}>⚠ Unpaid</option>
-            <option value="Cancelled" ${paymentValue==='Cancelled'?'selected':''}>✖ Cancelled</option>
-          </select>
+          ${isConfirmed
+            ? `<input class="sd-inp sd-ro sd-pmt paid" readonly value="✅ Paid — Confirmed">`
+            : `<select class="sd-sel sd-pmt ${paymentValue.toLowerCase()}" id="sd-payment" onchange="onPaymentStatusChange(this)">
+                <option value="Advanced"  ${paymentValue==='Advanced' ?'selected':''}>⏳ Advanced</option>
+                <option value="Paid"      ${paymentValue==='Paid'     ?'selected':''}>✅ Paid</option>
+                <option value="Unpaid"    ${paymentValue==='Unpaid'   ?'selected':''}>⚠ Unpaid</option>
+                <option value="Cancelled" ${paymentValue==='Cancelled'?'selected':''}>✖ Cancelled</option>
+              </select>`
+          }
         </div>
       </div>
       <div class="sd-row">
-        <div class="sd-fld"><label class="sd-lbl">অগ্রিম ক্যাশ</label><input class="sd-inp" id="sd-advcash"  type="number" min="0" placeholder="Adv Cash"  value="${advC  || ''}" oninput="recalcSlotPay()"></div>
-        <div class="sd-fld"><label class="sd-lbl">অগ্রিম বিকাশ</label><input class="sd-inp" id="sd-advbkash" type="number" min="0" placeholder="Adv bKash" value="${advB  || ''}" oninput="recalcSlotPay()"></div>
+        <div class="sd-fld"><label class="sd-lbl">অগ্রিম ক্যাশ</label><input class="sd-inp${roClass}" id="sd-advcash"  type="number" min="0" placeholder="0" value="${advC  || ''}"${ro}${noInput}></div>
+        <div class="sd-fld"><label class="sd-lbl">অগ্রিম বিকাশ</label><input class="sd-inp${roClass}" id="sd-advbkash" type="number" min="0" placeholder="0" value="${advB  || ''}"${ro}${noInput}></div>
       </div>
       <div class="sd-row">
-        <div class="sd-fld"><label class="sd-lbl">ক্যাশ জমা</label><input class="sd-inp" id="sd-cashpaid"  type="number" min="0" placeholder="Amount" value="${cashP  || ''}" oninput="recalcSlotPay()"></div>
-        <div class="sd-fld"><label class="sd-lbl">বিকাশ জমা</label><input class="sd-inp" id="sd-bkashpaid" type="number" min="0" placeholder="Amount" value="${bkashP || ''}" oninput="recalcSlotPay()"></div>
+        <div class="sd-fld"><label class="sd-lbl">ক্যাশ জমা</label><input class="sd-inp${roClass}" id="sd-cashpaid"  type="number" min="0" placeholder="0" value="${cashP  || ''}"${ro}${noInput}></div>
+        <div class="sd-fld"><label class="sd-lbl">বিকাশ জমা</label><input class="sd-inp${roClass}" id="sd-bkashpaid" type="number" min="0" placeholder="0" value="${bkashP || ''}"${ro}${noInput}></div>
       </div>
       <div class="sd-row">
-        <div class="sd-fld"><label class="sd-lbl">ডিসকাউন্ট</label><input class="sd-inp" id="sd-discount" type="number" min="0" placeholder="0" value="${disc || ''}" oninput="recalcSlotPay()"></div>
-        <div class="sd-fld"><label class="sd-lbl">বকেয়া</label><input class="sd-inp sd-due" id="sd-due" readonly value="0 BDT"></div>
+        <div class="sd-fld"><label class="sd-lbl">ডিসকাউন্ট</label><input class="sd-inp${roClass}" id="sd-discount" type="number" min="0" placeholder="0" value="${disc || ''}"${ro}${noInput}></div>
+        <div class="sd-fld"><label class="sd-lbl">বকেয়া</label><input class="sd-inp sd-due sd-ro" id="sd-due" readonly value="0 BDT"></div>
       </div>
       <div class="sd-row">
-        <div class="sd-fld" style="grid-column:1/-1"><label class="sd-lbl sd-tplbl">Total Pay</label><input class="sd-inp sd-total" id="sd-totalpay" readonly value="0"></div>
+        <div class="sd-fld" style="grid-column:1/-1"><label class="sd-lbl sd-tplbl">Total Pay</label><input class="sd-inp sd-total sd-ro" id="sd-totalpay" readonly value="0"></div>
       </div>
       <div class="sd-actions">
-        <button class="sd-btn book"     onclick="slotActionSave()">📅 Book</button>
-        <button class="sd-btn clear"    onclick="slotActionClear()">🧹 Clear</button>
-        <button class="sd-btn cancel"   onclick="slotActionCancel()">❌ Cancel</button>
-        <button class="sd-btn print"    onclick="slotActionPrint()">🖨 Print</button>
-        <button class="sd-btn sms-sim"  onclick="slotActionSmsSim()">📱 SMS (SIM)</button>
-        <button class="sd-btn sms-wa"   onclick="slotActionSmsWA()">💬 SMS (WhatsApp)</button>
-        <button class="sd-btn call-sim" onclick="slotActionCallSim()">📞 Call (SIM)</button>
-        <button class="sd-btn call-wa"  onclick="slotActionCallWA()">➡ Call (WhatsApp)</button>
+        ${isConfirmed
+          ? `<button class="sd-btn print"    onclick="slotActionPrint()">🖨 Print</button>
+             <button class="sd-btn sms-sim"  onclick="slotActionSmsSim()">📱 SMS (SIM)</button>
+             <button class="sd-btn sms-wa"   onclick="slotActionSmsWA()">💬 SMS (WhatsApp)</button>
+             <button class="sd-btn call-sim" onclick="slotActionCallSim()">📞 Call (SIM)</button>
+             <button class="sd-btn call-wa"  onclick="slotActionCallWA()">➡ Call (WhatsApp)</button>`
+          : `<button class="sd-btn book"     onclick="slotActionSave()">📅 Book</button>
+             <button class="sd-btn clear"    onclick="slotActionClear()">🧹 Clear</button>
+             <button class="sd-btn cancel"   onclick="slotActionCancel()">❌ Cancel</button>
+             <button class="sd-btn print"    onclick="slotActionPrint()">🖨 Print</button>
+             <button class="sd-btn sms-sim"  onclick="slotActionSmsSim()">📱 SMS (SIM)</button>
+             <button class="sd-btn sms-wa"   onclick="slotActionSmsWA()">💬 SMS (WhatsApp)</button>
+             <button class="sd-btn call-sim" onclick="slotActionCallSim()">📞 Call (SIM)</button>
+             <button class="sd-btn call-wa"  onclick="slotActionCallWA()">➡ Call (WhatsApp)</button>`
+        }
       </div>
       <textarea class="sd-textarea" id="sd-smsbody" placeholder="SMS Message"></textarea>
     </div>`;
@@ -599,6 +628,14 @@ async function slotActionSave() {
   if (!m) return;
   const id          = m.dataset.bookingId;
   const containerId = m.dataset.containerId;
+
+  // confirmed booking lock — save করা যাবে না
+  const existing = findBookingById(containerId, id);
+  if (existing && existing.status === 'confirmed') {
+    alert('এই booking confirmed। আর পরিবর্তন করা যাবে না।');
+    return;
+  }
+
   const pmt    = document.getElementById('sd-payment').value;
   const advC   = +document.getElementById('sd-advcash').value   || 0;
   const advB   = +document.getElementById('sd-advbkash').value  || 0;
@@ -611,13 +648,16 @@ async function slotActionSave() {
   else if (pmt === 'Paid')      status = 'confirmed';
   else                          status = 'pending';
 
+  const btn = document.querySelector('#sd-modal-root .sd-btn.book');
+  if (btn) { btn.innerHTML = '<span class="spin"></span>Saving...'; btn.disabled = true; }
+
   const update = { status, advance_cash: advC, advance_bkash: advB, cash_paid: cashP, bkash_paid: bkashP, discount: disc };
-  let { error } = await sb.from('bookings').update(update).eq('id', id);
-  if (error) {
-    const r2 = await sb.from('bookings').update({ status }).eq('id', id);
-    if (r2.error) { alert('Save failed: ' + r2.error.message); return; }
-    console.warn('Payment columns not stored:', error.message);
-  }
+  const { error } = await sb.from('bookings').update(update).eq('id', id);
+
+  if (btn) { btn.innerHTML = '📅 Book'; btn.disabled = false; }
+
+  if (error) { alert('Save failed: ' + error.message); return; }
+
   closeSlotDetailModal();
   if (containerId.startsWith('mgr')) loadAdminPanel();
   else loadSaPanel();
