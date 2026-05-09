@@ -37,22 +37,12 @@ async function mgrLogin() {
   document.getElementById('mgr-auth-check').style.display = 'none';
   document.getElementById('mgr-panel').classList.add('show');
   loadAdminPanel();
-  startMgrAutoRefresh();
 }
 
 function showMgrErr(msg) {
   const e = document.getElementById('mgr-err');
   e.textContent = msg;
   e.style.display = 'block';
-}
-
-let mgrRefreshTimer = null;
-function startMgrAutoRefresh() {
-  if (mgrRefreshTimer) clearInterval(mgrRefreshTimer);
-  mgrRefreshTimer = setInterval(() => {
-    const panel = document.getElementById('mgr-panel');
-    if (panel && panel.classList.contains('show')) loadAdminPanel();
-  }, 10000);
 }
 
 // ============================================================
@@ -547,7 +537,7 @@ async function openSlotDetailModal(containerId, bookingId) {
         <div class="sd-fld" style="grid-column:1/-1"><label class="sd-lbl sd-tplbl">Total Pay</label><input class="sd-inp sd-total" id="sd-totalpay" readonly value="0"></div>
       </div>
       <div class="sd-actions">
-        <button class="sd-btn book"     onclick="slotActionSave()">📅 Book</button>
+        <button class="sd-btn book" id="sd-book-btn" onclick="slotActionSave()">${paymentValue === 'Paid' ? '✅ Confirm' : '📅 Book'}</button>
         <button class="sd-btn clear"    onclick="slotActionClear()">🧹 Clear</button>
         <button class="sd-btn cancel"   onclick="slotActionCancel()">❌ Cancel</button>
         <button class="sd-btn print"    onclick="slotActionPrint()">🖨 Print</button>
@@ -575,6 +565,10 @@ function closeSlotDetailModal() {
 function onPaymentStatusChange(sel) {
   sel.classList.remove('advanced', 'paid', 'unpaid', 'cancelled');
   sel.classList.add(sel.value.toLowerCase());
+  const bookBtn = document.getElementById('sd-book-btn');
+  if (bookBtn) {
+    bookBtn.textContent = sel.value === 'Paid' ? '✅ Confirm' : '📅 Book';
+  }
 }
 
 function recalcSlotPay() {
@@ -618,9 +612,45 @@ async function slotActionSave() {
     if (r2.error) { alert('Save failed: ' + r2.error.message); return; }
     console.warn('Payment columns not stored:', error.message);
   }
+
+  // Payment = Paid হলে Confirm করা হয়েছে — সব fields read-only করো
+  if (pmt === 'Paid') {
+    _lockModalFields();
+    return; // modal বন্ধ করব না, locked অবস্থায় দেখাবে
+  }
+
   closeSlotDetailModal();
   if (containerId.startsWith('mgr')) loadAdminPanel();
   else loadSaPanel();
+}
+
+// Confirm করার পর modal এর সব editable field lock করে দেওয়া
+function _lockModalFields() {
+  // সব input/select এ readonly/disabled করো
+  ['sd-payment','sd-advcash','sd-advbkash','sd-cashpaid','sd-bkashpaid','sd-discount'].forEach(function(fid) {
+    const el = document.getElementById(fid);
+    if (!el) return;
+    el.disabled = true;
+    el.classList.add('sd-ro');
+  });
+  // Book/Confirm button disable
+  const bookBtn = document.getElementById('sd-book-btn');
+  if (bookBtn) { bookBtn.disabled = true; bookBtn.style.opacity = '0.5'; bookBtn.style.cursor = 'not-allowed'; }
+  // Clear button disable
+  const clearBtn = document.querySelector('.sd-btn.clear');
+  if (clearBtn) { clearBtn.disabled = true; clearBtn.style.opacity = '0.5'; clearBtn.style.cursor = 'not-allowed'; }
+  // SMS textarea readonly
+  const ta = document.getElementById('sd-smsbody');
+  if (ta) { ta.readOnly = true; ta.classList.add('sd-ro'); }
+  // Confirmed badge দেখানো
+  const head = document.querySelector('.sd-head .sd-title');
+  if (head && !head.querySelector('.confirmed-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'confirmed-badge';
+    badge.style.cssText = 'margin-left:8px;background:#0E7A3B;color:#fff;font-size:11px;padding:3px 8px;border-radius:999px;font-weight:600';
+    badge.textContent = '✅ Confirmed';
+    head.appendChild(badge);
+  }
 }
 
 function slotActionClear() {
