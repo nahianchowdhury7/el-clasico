@@ -415,14 +415,27 @@ async function confirmBook() {
   const btn=document.getElementById('confirm-btn');
   btn.innerHTML='<span class="spin"></span>Saving...';btn.disabled=true;
   const startMin=toMin(time);
-  const isFree=await isSlotFree(date,startMin,selDur);
-  if(!isFree){alert('এই slot টি booked। অন্য time বেছে নিন।');await buildSlots();btn.innerHTML='Confirm booking';btn.disabled=false;return;}
   const amt=calcAmt(time,selDur);
-  const bkash=document.getElementById('b-bkash').value.trim();
-  const note=document.getElementById('b-note').value.trim();
-  const bookingData={name,phone,booking_date:date,time:time+':00',duration_minutes:selDur,amount:amt,status:'pending',note:note||null};
-  if(currentUser) bookingData.user_id=currentUser.id;
-  const {error}=await sb.from('bookings').insert(bookingData);
+const bkash=document.getElementById('b-bkash').value.trim();
+const note=document.getElementById('b-note').value.trim();
+const { data: result, error } = await sb.rpc('book_slot', {
+  p_name: name,
+  p_phone: phone,
+  p_booking_date: date,
+  p_time: time+':00',
+  p_duration_minutes: selDur,
+  p_amount: amt,
+  p_bkash_trxid: bkash || null,
+  p_note: note || null,
+  p_user_id: currentUser ? currentUser.id : null
+});
+if(error){alert('Error: '+error.message);btn.innerHTML='Confirm booking';btn.disabled=false;return;}
+if(result && !result.success){
+  alert('এই slot টি booked। অন্য time বেছে নিন।');
+  await buildSlots();
+  btn.innerHTML='Confirm booking';btn.disabled=false;
+  return;
+}
   btn.innerHTML='Confirm booking';btn.disabled=false;
   if(error){alert('Error: '+error.message);return;}
   await buildSlots();
