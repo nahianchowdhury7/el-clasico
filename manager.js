@@ -549,9 +549,15 @@ async function openSlotDetailModal(containerId, bookingId) {
       <textarea class="sd-textarea" id="sd-smsbody" placeholder="SMS Message"></textarea>
     </div>`;
 
-  m.classList.add('open');
+ m.classList.add('open');
   m.onclick = function (e) { if (e.target === m) closeSlotDetailModal(); };
   recalcSlotPay();
+
+  if (b.payment_locked) {
+    _lockModalFields();
+  } else if (b.advance_locked) {
+    _lockAdvanceFields();
+  }
 
   const defaultMsg = `Dear ${b.name || ''},\nআপনার booking — ${b.booking_date} at ${fmtMin(b._start)} - ${fmtMin(b._end)}.\nফি: ৳${fee.toLocaleString()}\nEl Clasico Football Arena ⚽`;
   document.getElementById('sd-smsbody').value = defaultMsg;
@@ -605,7 +611,10 @@ async function slotActionSave() {
   else if (pmt === 'Paid')      status = 'confirmed';
   else                          status = 'pending';
 
-  const update = { status, advance_cash: advC, advance_bkash: advB, cash_paid: cashP, bkash_paid: bkashP, discount: disc };
+  const advanceLocked = pmt === 'Advanced' || pmt === 'Paid';
+  const paymentLocked = pmt === 'Paid';
+
+  const update = { status, advance_cash: advC, advance_bkash: advB, cash_paid: cashP, bkash_paid: bkashP, discount: disc, advance_locked: advanceLocked, payment_locked: paymentLocked };
   let { error } = await sb.from('bookings').update(update).eq('id', id);
   if (error) {
     const r2 = await sb.from('bookings').update({ status }).eq('id', id);
@@ -652,9 +661,22 @@ function _lockModalFields() {
     head.appendChild(badge);
   }
 }
-
+function _lockAdvanceFields() {
+  ['sd-advcash','sd-advbkash'].forEach(function(fid) {
+    const el = document.getElementById(fid);
+    if (!el) return;
+    el.disabled = true;
+    el.classList.add('sd-ro');
+  });
+}
 function slotActionClear() {
-  ['sd-advcash','sd-advbkash','sd-cashpaid','sd-bkashpaid','sd-discount'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const m = document.getElementById('sd-modal-root');
+  const b = m ? findBookingById(m.dataset.containerId, m.dataset.bookingId) : null;
+  if (b && b.payment_locked) return;
+  const fields = (b && b.advance_locked)
+    ? ['sd-cashpaid','sd-bkashpaid','sd-discount']
+    : ['sd-advcash','sd-advbkash','sd-cashpaid','sd-bkashpaid','sd-discount'];
+  fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const sel = document.getElementById('sd-payment');
   if (sel) { sel.value = 'Advanced'; onPaymentStatusChange(sel); }
   recalcSlotPay();
