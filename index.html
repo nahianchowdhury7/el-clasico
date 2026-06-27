@@ -444,7 +444,8 @@
         <div class="at" onclick="saTab('block',this)">Block slots</div>
         <div class="at" onclick="saTab('pricing',this)">Pricing</div>
         <div class="at" onclick="saTab('reviews',this)">Reviews</div>
-        <div class="at" onclick="saTab('gallery',this)">Gallery</div>
+       <div class="at" onclick="saTab('gallery',this)">Gallery</div>
+        <div class="at" onclick="saTab('customers',this)">Customers</div>
       </div>
       <div id="sa-bookings"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
       <div id="sa-revenue" style="display:none">
@@ -509,7 +510,11 @@
           <div class="fg" style="margin-bottom:10px"><label>Caption (optional)</label><input type="text" id="gal-caption" placeholder="Night session — full floodlights"></div>
           <button class="cbtn" onclick="addGalleryPhoto()" style="margin-top:4px">Upload Photo</button>
         </div>
-        <div id="sa-gallery-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+       <div id="sa-gallery-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
+      </div>
+      <div id="sa-customers" style="display:none">
+        <div class="info-box">প্রতিটি unique ফোন নাম্বার দিয়ে গ্রুপ করা — মোট কয়টা slot বুক করেছে ও মোট কত টাকা দিয়েছে।</div>
+        <div id="sa-customers-list"><div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div></div>
       </div>
     </div>
   </div>
