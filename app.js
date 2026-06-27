@@ -418,6 +418,8 @@ async function confirmBook() {
   const amt=calcAmt(time,selDur);
 const bkash=document.getElementById('b-bkash').value.trim();
 const note=document.getElementById('b-note').value.trim();
+const addr=document.getElementById('b-address').value.trim();
+const cemail=document.getElementById('b-email').value.trim();
 const { data: result, error } = await sb.rpc('book_slot', {
   p_name: name,
   p_phone: phone,
@@ -427,6 +429,8 @@ const { data: result, error } = await sb.rpc('book_slot', {
   p_amount: amt,
   p_bkash_trxid: bkash || null,
   p_note: note || null,
+  p_address: addr || null,
+  p_email: cemail || null,
   p_user_id: currentUser ? currentUser.id : null
 });
 if(error){alert('Error: '+error.message);btn.innerHTML='Confirm booking';btn.disabled=false;return;}
