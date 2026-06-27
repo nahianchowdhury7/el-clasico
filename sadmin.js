@@ -87,13 +87,14 @@ async function loadSaPanel() {
 function saTab(tab, el) {
   document.querySelectorAll('#sa-panel .at').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
-  ['bookings', 'revenue', 'calendar', 'block', 'pricing', 'reviews', 'gallery'].forEach(t => {
+  ['bookings', 'revenue', 'calendar', 'block', 'pricing', 'reviews', 'gallery', 'customers'].forEach(t => {
     document.getElementById('sa-' + t).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'revenue')  loadSaPanel();
   if (tab === 'calendar') loadSaPanel();
   if (tab === 'reviews')  loadAdminReviews();
   if (tab === 'gallery')  loadAdminGallery();
+  if (tab === 'customers') loadSaCustomers();
 }
 
 // ============================================================
@@ -346,3 +347,56 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+// ============================================================
+// CUSTOMERS
+// ============================================================
+async function loadSaCustomers() {
+  const c = document.getElementById('sa-customers-list');
+  if (!c) return;
+  c.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px"><span class="spin"></span>Loading...</div>';
+
+  const { data, error } = await sb.from('bookings').select('*');
+  if (error) { c.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">Error loading customers.</div>'; return; }
+
+  const esc = v => String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const map = {};
+
+  (data || []).forEach(b => {
+    const key = (b.phone || '').trim();
+    if (!key) return;
+    if (!map[key]) map[key] = { name: '', phone: key, address: '', email: '', count: 0, totalPaid: 0 };
+    const cust = map[key];
+    if (b.name) cust.name = b.name;
+    if (b.address) cust.address = b.address;
+    if (b.email) cust.email = b.email;
+    if (b.status !== 'cancelled') cust.count += 1;
+    cust.totalPaid += (b.advance_cash || 0) + (b.advance_bkash || 0) + (b.cash_paid || 0) + (b.bkash_paid || 0);
+  });
+
+  const customers = Object.values(map).sort((a, b) => b.totalPaid - a.totalPaid);
+
+  if (!customers.length) {
+    c.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">No customers yet.</div>';
+    return;
+  }
+
+  c.innerHTML = `
+    <div style="overflow-x:auto">
+    <table class="btable" style="min-width:760px">
+      <thead><tr>
+        <th>Name</th><th>Phone</th><th>Address</th><th>Email</th><th>Slots booked</th><th>Total paid</th>
+      </tr></thead>
+      <tbody>
+        ${customers.map(cu => `
+          <tr>
+            <td>${esc(cu.name) || '—'}</td>
+            <td>${esc(cu.phone)}</td>
+            <td>${esc(cu.address) || '—'}</td>
+            <td>${esc(cu.email) || '—'}</td>
+            <td>${cu.count}</td>
+            <td>৳${cu.totalPaid.toLocaleString()}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`;
+}
