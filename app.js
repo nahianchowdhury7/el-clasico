@@ -51,6 +51,9 @@ function updateNavAuth() {
   const area = document.getElementById('nav-auth-area');
   if (currentUser) {
     const name = currentProfile?.name || currentUser.email.split('@')[0];
+    const dashboardItem = adminRole
+      ? `<div class="ud-item" onclick="goPage('${adminRole === 'superadmin' ? 'sadmin' : 'manager'}')">🛠️ Dashboard</div><div class="ud-divider"></div>`
+      : '';
     area.innerHTML = `
       <div class="user-chip" onclick="toggleUserDropdown(event)" id="user-chip">
         <span>👤 ${name}</span>
@@ -65,6 +68,7 @@ function updateNavAuth() {
           </div>
         </div>
         <div class="ud-divider"></div>
+        ${dashboardItem}
         <div class="ud-item" onclick="openProfileModal()">👤 Profile</div>
         <div class="ud-item" onclick="openMyBookings()">📋 My Bookings</div>
         <div class="ud-item" onclick="openMyHistory()">📜 History</div>
@@ -77,7 +81,6 @@ function updateNavAuth() {
     document.getElementById('book-login-notice').style.display = 'block';
   }
 }
-
 function toggleUserDropdown(e) {
   e.stopPropagation();
   const dd = document.getElementById('user-dropdown');
