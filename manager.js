@@ -388,11 +388,23 @@ async function mgrAddBook() {
   const date  = document.getElementById('m-date').value;
   const time  = document.getElementById('m-time').value;
   if (!name || !phone || !date || !time) { alert('Fill all fields!'); return; }
-  const isFree = await isSlotFree(date, toMin(time), mgrDur);
-  if (!isFree) { alert('Conflict! এই slot টি already booked।'); return; }
   const amt = calcAmt(time, mgrDur);
-  const { error } = await sb.from('bookings').insert({ name, phone, booking_date: date, time: time + ':00', duration_minutes: mgrDur, amount: amt, status: 'confirmed' });
+  const { data: result, error } = await sb.rpc('book_slot', {
+    p_name: name,
+    p_phone: phone,
+    p_booking_date: date,
+    p_time: time + ':00',
+    p_duration_minutes: mgrDur,
+    p_amount: amt,
+    p_bkash_trxid: null,
+    p_note: null,
+    p_address: null,
+    p_email: null,
+    p_user_id: null,
+    p_status: 'confirmed'
+  });
   if (error) { alert('Error: ' + error.message); return; }
+  if (result && !result.success) { alert('Conflict! এই slot টি already booked।'); return; }
   document.getElementById('m-smsg').textContent = `${name} — ${date} ${time} for ${mgrDur}min. ৳${amt.toLocaleString()}`;
   document.getElementById('m-sbox').style.display = 'block';
   loadAdminPanel();
